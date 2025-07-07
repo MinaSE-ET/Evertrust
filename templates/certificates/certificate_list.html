@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Certificates{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-certificate me-2"></i>Certificates
+                    </h2>
+                    <p class="text-muted mb-0">Manage all insurance certificates</p>
+                </div>
+                <div>
+                    <a href="{% url 'certificates:create_certificate' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Certificate
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Search and Filter Form -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Search & Filter
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.search.id_for_label }}" class="form-label">Search</label>
+                            {{ form.search }}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="{{ form.certificate_type.id_for_label }}" class="form-label">Type</label>
+                            {{ form.certificate_type }}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="{{ form.payment_status.id_for_label }}" class="form-label">Payment</label>
+                            {{ form.payment_status }}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="{{ form.date_from.id_for_label }}" class="form-label">From Date</label>
+                            {{ form.date_from }}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="{{ form.date_to.id_for_label }}" class="form-label">To Date</label>
+                            {{ form.date_to }}
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                            <a href="{% url 'certificates:certificate_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Results Summary -->
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Found <strong>{{ total_certificates }}</strong> certificate{{ total_certificates|pluralize }}
+                {% if request.GET %}
+                    matching your search criteria
+                {% endif %}
+            </div>
+            
+            <!-- Certificates Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Policy Number</th>
+                                    <th>Client Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Premium</th>
+                                    <th>Period</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for certificate in page_obj %}
+                                <tr>
+                                    <td>
+                                        <strong class="text-primary">{{ certificate.policy_number }}</strong>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ certificate.client_name }}</strong>
+                                            {% if certificate.client_address %}
+                                            <br><small class="text-muted">{{ certificate.client_address|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ certificate.get_certificate_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if certificate.status == 'active' %}success{% elif certificate.status == 'expired' %}danger{% else %}warning{% endif %}">
+                                            {{ certificate.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>${{ certificate.premium_amount|floatformat:2 }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            <span class="badge bg-{% if certificate.payment_status == 'paid' %}success{% elif certificate.payment_status == 'overdue' %}danger{% else %}warning{% endif %}">
+                                                {{ certificate.get_payment_status_display }}
+                                            </span>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <small class="text-muted">Start: {{ certificate.start_date|date:"M d, Y" }}</small>
+                                            <br>
+                                            <small class="text-muted">End: {{ certificate.end_date|date:"M d, Y" }}</small>
+                                            {% if certificate.days_remaining > 0 %}
+                                            <br><span class="text-success"><small>{{ certificate.days_remaining }} days left</small></span>
+                                            {% else %}
+                                            <br><span class="text-danger"><small>Expired</small></span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'certificates:certificate_detail' certificate.policy_number %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'certificates:certificate_pdf_professional' certificate.policy_number %}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="Professional PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                            <a href="{% url 'certificates:printable_certificate' certificate.policy_number %}" 
+                                               class="btn btn-sm btn-outline-success" 
+                                               title="Printable Version">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                            <a href="{% url 'certificates:certificate_pdf' certificate.policy_number %}" 
+                                               class="btn btn-sm btn-outline-info" 
+                                               title="Download PDF">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{% url 'certificates:edit_certificate' certificate.policy_number %}" 
+                                               class="btn btn-sm btn-outline-warning" 
+                                               title="Edit Certificate">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                                            <h5>No certificates found</h5>
+                                            <p>No certificates match your search criteria.</p>
+                                            <a href="{% url 'certificates:create_certificate' %}" class="btn btn-primary">
+                                                <i class="fas fa-plus me-2"></i>Create First Certificate
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Certificate pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+.card {
+    border-radius: 1rem;
+}
+
+.card-header {
+    border-radius: 1rem 1rem 0 0 !important;
+}
+
+.pagination .page-link {
+    color: #3b82f6;
+    border-color: #e5e7eb;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.pagination .page-link:hover {
+    color: #1e40af;
+    background-color: #f8fafc;
+}
+</style>
+{% endblock %} 

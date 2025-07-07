@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="text-primary">
+                    <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+                </h2>
+                <div class="btn-group">
+                    <a href="{% url 'certificates:admin_dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-cog me-1"></i>Admin Panel
+                    </a>
+                    <a href="{% url 'certificates:export_data' %}?model=certificate&format=csv" class="btn btn-outline-success">
+                        <i class="fas fa-download me-1"></i>Export Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-certificate fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Certificates</h6>
+                            <h3 class="mb-0">{{ stats.total_certificates }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Active Certificates</h6>
+                            <h3 class="mb-0">{{ stats.active_certificates }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-clock fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Pending Payments</h6>
+                            <h3 class="mb-0">{{ stats.pending_payments }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                                <i class="fas fa-dollar-sign fa-2x text-info"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Monthly Revenue</h6>
+                            <h3 class="mb-0">${{ stats.monthly_revenue|floatformat:0 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Tables Row -->
+    <div class="row g-4">
+        <!-- Recent Certificates -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>Recent Certificates
+                        </h5>
+                        <a href="{% url 'certificates:manage_certificates' %}" class="btn btn-sm btn-outline-primary">
+                            View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Policy Number</th>
+                                    <th>Client Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Premium</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for certificate in recent_certificates %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ certificate.policy_number }}</strong>
+                                    </td>
+                                    <td>{{ certificate.client_name|truncatechars:20 }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ certificate.get_certificate_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if certificate.status == 'active' %}success{% elif certificate.status == 'expired' %}danger{% else %}warning{% endif %}">
+                                            {{ certificate.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>${{ certificate.premium_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if certificate.policy_number %}
+                                            <a href="{% url 'certificates:certificate_detail' certificate.policy_number %}" 
+                                               class="btn btn-outline-primary" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'certificates:certificate_edit' certificate.policy_number %}" 
+                                               class="btn btn-outline-secondary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'certificates:certificate_pdf_professional' certificate.policy_number %}" 
+                                               class="btn btn-outline-danger" title="Download PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted">No Policy Number</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <br>No certificates found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions and Stats -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'certificates:certificate_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Certificate
+                        </a>
+                        <a href="{% url 'certificates:verify' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-search me-2"></i>Verify Certificate
+                        </a>
+                        <a href="{% url 'certificates:dashboard_financials' %}" class="btn btn-outline-success">
+                            <i class="fas fa-money-bill me-2"></i>Financial Analysis
+                        </a>
+                        <a href="{% url 'certificates:export_data' %}?model=certificate&format=csv" class="btn btn-outline-info">
+                            <i class="fas fa-download me-2"></i>Export Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Statistics -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>System Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h4 class="text-primary mb-1">{{ stats.total_verifications }}</h4>
+                                <small class="text-muted">Total Verifications</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h4 class="text-success mb-1">{{ stats.recent_verifications }}</h4>
+                                <small class="text-muted">Recent (30 days)</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h4 class="text-info mb-1">{{ stats.total_transactions }}</h4>
+                                <small class="text-muted">Total Transactions</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <h4 class="text-warning mb-1">{{ stats.overdue_payments }}</h4>
+                                <small class="text-muted">Overdue Payments</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for action in recent_actions %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{% if action.type == 'certificate_created' %}primary{% elif action.type == 'verification' %}success{% else %}info{% endif %}"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">{{ action.content }}</h6>
+                                    <small class="text-muted">{{ action.timestamp|timesince }} ago</small>
+                                </div>
+                                {% if action.url %}
+                                <a href="{{ action.url }}" class="btn btn-sm btn-outline-primary mt-1">View Details</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <br>No recent activity
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+</style>
+{% endblock %} 

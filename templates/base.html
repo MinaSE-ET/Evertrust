@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            background-color: #f7f9fb;
+            color: #22324a;
+        }
+        .navbar {
+            background: linear-gradient(90deg, #0a3d62 0%, #3c6382 100%);
+            box-shadow: 0 2px 8px rgba(10,61,98,0.08);
+        }
+        .navbar-brand img {
+            height: 38px;
+            margin-right: 10px;
+        }
+        .navbar .nav-link, .navbar .navbar-brand {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .navbar .nav-link.active, .navbar .nav-link:focus, .navbar .nav-link:hover {
+            color: #f6b93b !important;
+        }
+        .btn-primary, .bg-primary {
+            background: linear-gradient(90deg, #0a3d62 0%, #3c6382 100%) !important;
+            border: none;
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background: #f6b93b !important;
+            color: #22324a !important;
+        }
+        .btn-outline-primary {
+            border-color: #0a3d62;
+            color: #0a3d62;
+        }
+        .btn-outline-primary:hover {
+            background: #0a3d62;
+            color: #fff;
+        }
+        .shadow-sm {
+            box-shadow: 0 2px 8px rgba(10,61,98,0.08) !important;
+        }
+        .footer {
+            background: #0a3d62;
+            color: #fff;
+            border-top: 4px solid #f6b93b;
+        }
+        .footer a {
+            color: #f6b93b;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .footer .fa-shield-alt {
+            color: #f6b93b;
+        }
+        .footer .quick-links li {
+            margin-bottom: 0.5rem;
+        }
+        .footer .contact-list li {
+            margin-bottom: 0.5rem;
+        }
+        .hero-section {
+            background: url('{% static "images/hero-bg.jpg" %}') center/cover no-repeat;
+            min-height: 350px;
+            color: #fff;
+            position: relative;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10,61,98,0.7);
+            z-index: 1;
+        }
+        .hero-section > .container {
+            position: relative;
+            z-index: 2;
+        }
+        .feature-icon {
+            background: #f6b93b;
+            color: #0a3d62;
+            border-radius: 50%;
+            width: 60px; height: 60px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem auto;
+            font-size: 2rem;
+            box-shadow: 0 2px 8px rgba(246,185,59,0.12);
+        }
+        .card {
+            border-radius: 14px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 14px 14px 0 0;
+            background: #f7f9fb;
+            border-bottom: 1px solid #e3e6ed;
+        }
+        .badge {
+            font-size: 0.95em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .timeline-marker {
+            border: 2px solid #f6b93b !important;
+        }
+        /* Subtle hover for cards */
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(10,61,98,0.12) !important;
+            transform: translateY(-2px) scale(1.01);
+            transition: all 0.2s;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'certificates:index' %}">
+                <img src="{% static 'images/Evertrust-logo.png' %}" alt="EverTrust Logo"/>
+                
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'certificates:index' %}">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'certificates:verify' %}">
+                            <i class="fas fa-search me-1"></i>Verify Certificate
+                        </a>
+                    </li>
+                    {% if user.is_authenticated and user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'certificates:dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'certificates:admin_dashboard' %}">
+                            <i class="fas fa-cog me-1"></i>Admin
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="{% url 'certificates:admin_logout' %}">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'certificates:admin_login' %}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <h5 class="mb-3 d-flex align-items-center">
+                        <i class="fas fa-shield-alt me-2"></i>Professional Insurance Management
+                    </h5>
+                    <p class="text-light">
+                        Professional travel insurance management and certificate verification system.<br>
+                        Secure, reliable, and comprehensive solutions for all your travel insurance needs.
+                    </p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h6 class="mb-3">Quick Links</h6>
+                    <ul class="list-unstyled quick-links">
+                        <li><a href="{% url 'certificates:index' %}">Home</a></li>
+                        <li><a href="{% url 'certificates:verify' %}">Verify Certificate</a></li>
+                        {% if user.is_authenticated and user.is_staff %}
+                        <li><a href="{% url 'certificates:dashboard' %}">Dashboard</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="mb-3">Contact</h6>
+                    <ul class="list-unstyled contact-list">
+                        <li><i class="fas fa-envelope me-2"></i>support@evertrust.com</li>
+                        <li><i class="fas fa-phone me-2"></i>+44 750 975 0594</li>
+                        <li><i class="fas fa-plane-departure me-2"></i>Travel Insurance 24/7</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0 text-light">
+                        &copy; {% now "Y" %} EverTrust. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-light">
+                        <i class="fas fa-globe-europe me-1"></i>Travel with Confidence
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

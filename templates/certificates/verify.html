@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Certificate - EverTrust Travel Insurance{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Certificate Verification
+                    </h2>
+                    <p class="mb-0 text-light">Enter your travel insurance certificate ID to verify its validity and view details</p>
+                </div>
+                <div class="card-body p-4">
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    <form method="post" id="verifyForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.policy_number.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-certificate me-2"></i>Policy Number
+                            </label>
+                            {{ form.policy_number }}
+                            {% if form.policy_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.policy_number.errors.0 }}
+                                </div>
+                            {% endif %}
+                            {% if form.policy_number.help_text %}
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    {{ form.policy_number.help_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg shadow">
+                                <i class="fas fa-search me-2"></i>Verify Certificate
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if certificate %}
+            <div class="card border-0 shadow mb-4 animate__animated animate__fadeIn">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i>Certificate Found</h4>
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Policy Number:</div>
+                        <div class="col-6 fw-bold">{{ certificate.policy_number }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Client Name:</div>
+                        <div class="col-6 fw-bold">{{ certificate.client_name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Client Address:</div>
+                        <div class="col-6 fw-bold">{{ certificate.client_address|linebreaks }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Status:</div>
+                        <div class="col-6">
+                            <span class="badge bg-{% if certificate.status == 'active' %}success{% elif certificate.status == 'expired' %}danger{% else %}warning{% endif %}">
+                                {{ certificate.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Verified:</div>
+                        <div class="col-6">
+                            <span class="badge bg-{% if certificate.is_verified %}success{% else %}secondary{% endif %}">
+                                {% if certificate.is_verified %}Yes{% else %}No{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Start Date:</div>
+                        <div class="col-6">{{ certificate.start_date|date:"M d, Y" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">End Date:</div>
+                        <div class="col-6">{{ certificate.end_date|date:"M d, Y" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Issue Date:</div>
+                        <div class="col-6">{{ certificate.issue_date|date:"M d, Y H:i" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Insurance Type:</div>
+                        <div class="col-6">{{ certificate.get_certificate_type_display }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Coverage Level:</div>
+                        <div class="col-6">{{ certificate.get_coverage_level_display }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Insured Amount:</div>
+                        <div class="col-6">${{ certificate.insured_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Premium Amount:</div>
+                        <div class="col-6">${{ certificate.premium_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Payment Status:</div>
+                        <div class="col-6">
+                            <span class="badge bg-{% if certificate.payment_status == 'paid' %}success{% elif certificate.payment_status == 'overdue' %}danger{% else %}warning{% endif %}">
+                                {{ certificate.get_payment_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>Need Help?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Common Issues:</h6>
+                            <ul class="list-unstyled small">
+                                <li><i class="fas fa-check text-success me-2"></i>Check for typos</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Use uppercase letters</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Remove extra spaces</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Contact Support:</h6>
+                            <ul class="list-unstyled small">
+                                <li><i class="fas fa-envelope me-2"></i>support@evertrust.com</li>
+                                <li><i class="fas fa-phone me-2"></i>+44 750 975 0594</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{% url 'certificates:index' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const policyInput = document.getElementById('id_policy_number');
+    const form = document.getElementById('verifyForm');
+    // Auto-format policy number input
+    if (policyInput) {
+        policyInput.addEventListener('input', function(e) {
+            // Convert to uppercase for policy numbers
+            this.value = this.value.toUpperCase();
+        });
+        policyInput.focus();
+    }
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const policyNumber = policyInput.value.trim();
+            // Allow any non-empty value for policy numbers
+            if (!policyNumber) {
+                e.preventDefault();
+                alert('Please enter a policy number.');
+                policyInput.focus();
+                return;
+            }
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying...';
+            submitBtn.disabled = true;
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+    }
+    if (policyInput) {
+        policyInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.submit();
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

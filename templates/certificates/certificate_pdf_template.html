@@ -1,0 +1,603 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EverTrust Travel Insurance Certificate - {{ certificate.policy_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', serif;
+            color: #1a1a1a;
+            line-height: 1.4;
+            background: white;
+            font-size: 12px;
+        }
+        
+        .page-container {
+            width: 180mm;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #002d62;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            min-height: 257mm;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #002d62;
+        }
+        
+        .header-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #002d62;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .header-subtitle {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Security Info */
+        .security-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 9px;
+            color: #666;
+            text-align: right;
+        }
+        
+        .security-info div {
+            margin-bottom: 2px;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-bottom: 20px;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #002d62;
+            border-bottom: 1px solid #002d62;
+            padding-bottom: 5px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        
+        /* Grid Layouts */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #374151;
+            min-width: 100px;
+        }
+        
+        .info-value {
+            color: #1f2937;
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        .compact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            font-size: 10px;
+        }
+        
+        .compact-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .compact-label {
+            font-weight: bold;
+            color: #374151;
+            min-width: 70px;
+        }
+        
+        .compact-value {
+            color: #1f2937;
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        /* Coverage Section */
+        .coverage-section {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #0ea5e9;
+            margin-bottom: 15px;
+        }
+        
+        .coverage-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 10px;
+        }
+        
+        .coverage-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #bae6fd;
+        }
+        
+        .coverage-label {
+            font-weight: bold;
+            color: #0c4a6e;
+        }
+        
+        .coverage-amount {
+            color: #1e293b;
+            font-weight: bold;
+        }
+        
+        /* Terms Section */
+        .terms-section {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #f59e0b;
+            margin-bottom: 15px;
+        }
+        
+        .terms-list {
+            list-style: none;
+            font-size: 10px;
+        }
+        
+        .terms-list li {
+            margin-bottom: 5px;
+            padding-left: 15px;
+            position: relative;
+        }
+        
+        .terms-list li:before {
+            content: '▶';
+            color: #92400e;
+            position: absolute;
+            left: 0;
+            font-size: 8px;
+        }
+        
+        /* QR Code Section */
+        .qr-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .qr-code {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #002d62;
+            border-radius: 4px;
+            background: white;
+        }
+        
+        .verification-info {
+            text-align: right;
+            font-size: 9px;
+            color: #64748b;
+        }
+        
+        .verification-info .title {
+            font-weight: bold;
+            color: #002d62;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+        
+        /* Signature Section */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #002d62;
+        }
+        
+        .signature-box {
+            text-align: center;
+            flex: 1;
+            margin: 0 15px;
+        }
+        
+        .signature-line {
+            border-top: 2px solid #002d62;
+            margin-top: 25px;
+            padding-top: 8px;
+            position: relative;
+        }
+        
+        .signature-line::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: #f59e0b;
+        }
+        
+        .signature-image {
+            width: 100px;
+            height: auto;
+            margin: 0 auto 5px auto;
+            display: block;
+        }
+        
+        .signature-name {
+            font-weight: bold;
+            color: #002d62;
+            font-size: 11px;
+        }
+        
+        .signature-title {
+            font-size: 9px;
+            color: #64748b;
+        }
+        
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            text-align: center;
+            font-size: 9px;
+            color: #64748b;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+        }
+        
+        .contact-item {
+            display: inline-block;
+            margin: 0 10px;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-expired {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        /* Amount Highlighting */
+        .amount-highlight {
+            color: #002d62;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        /* Seal Image */
+        .seal-image {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            width: 60px;
+            height: auto;
+            opacity: 0.8;
+        }
+        
+        /* Corner Decorations */
+        .corner-decoration {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #002d62;
+        }
+        
+        .corner-decoration.top-left {
+            top: 15px;
+            left: 15px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .corner-decoration.top-right {
+            top: 15px;
+            right: 15px;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .corner-decoration.bottom-left {
+            bottom: 15px;
+            left: 15px;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .corner-decoration.bottom-right {
+            bottom: 15px;
+            right: 15px;
+            border-left: none;
+            border-top: none;
+        }
+        
+        /* Page Number */
+        .page-number {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 8px;
+            color: #9ca3af;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .page-container {
+                border: none;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Corner Decorations -->
+        <div class="corner-decoration top-left"></div>
+        <div class="corner-decoration top-right"></div>
+        <div class="corner-decoration bottom-left"></div>
+        <div class="corner-decoration bottom-right"></div>
+        
+        <!-- Security Info -->
+        <div class="security-info">
+            <div><strong>Certificate ID:</strong> {{ certificate.policy_number }}</div>
+            <div><strong>Generated:</strong> {{ current_date }}</div>
+            <div><strong>Security Level:</strong> Premium</div>
+        </div>
+
+        <!-- Official Seal Image -->
+        <img src="{{ seal_data_url }}" alt="EverTrust Official Seal" class="seal-image" />
+
+        <!-- Header -->
+        <div class="header">
+            <img src="{{ logo_data_url }}" alt="EverTrust Logo" class="header-logo" />
+            <div class="header-title">Travel Insurance Certificate</div>
+            <div class="header-subtitle">Comprehensive Protection for Your Journey</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Policy Information -->
+            <div class="section">
+                <div class="section-title">Policy Information</div>
+                <div class="compact-grid">
+                    <div class="compact-item">
+                        <span class="compact-label">Policy:</span>
+                        <span class="compact-value">{{ certificate.policy_number }}</span>
+                    </div>
+                    <div class="compact-item">
+                        <span class="compact-label">Issue:</span>
+                        <span class="compact-value">{{ certificate.issue_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="compact-item">
+                        <span class="compact-label">Status:</span>
+                        <span class="compact-value">
+                            <span class="status-badge status-{{ certificate.status }}">
+                                {{ certificate.get_status_display }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="compact-item">
+                        <span class="compact-label">Payment:</span>
+                        <span class="compact-value">
+                            <span class="status-badge status-{{ certificate.payment_status }}">
+                                {{ certificate.get_payment_status_display }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="compact-item">
+                        <span class="compact-label">Type:</span>
+                        <span class="compact-value">{{ certificate.get_certificate_type_display }}</span>
+                    </div>
+                    <div class="compact-item">
+                        <span class="compact-label">Level:</span>
+                        <span class="compact-value">{{ certificate.get_coverage_level_display }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Information -->
+            <div class="section">
+                <div class="section-title">Client Information</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Name:</span>
+                        <span class="info-value">{{ certificate.client_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">ID Number:</span>
+                        <span class="info-value">{{ certificate.client_id_number }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Date of Birth:</span>
+                        <span class="info-value">{{ certificate.client_date_of_birth }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Location:</span>
+                        <span class="info-value">{{ certificate.location }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Activity:</span>
+                        <span class="info-value">{{ certificate.activity }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Address:</span>
+                        <span class="info-value">{{ certificate.client_address|truncatechars:35 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coverage Details -->
+            <div class="section">
+                <div class="section-title">Coverage Details</div>
+                <div class="coverage-section">
+                    <div class="coverage-grid">
+                        <div class="coverage-item">
+                            <span class="coverage-label">Insured Amount:</span>
+                            <span class="coverage-amount amount-highlight">${{ certificate.insured_amount|floatformat:0 }}</span>
+                        </div>
+                        <div class="coverage-item">
+                            <span class="coverage-label">Premium Amount:</span>
+                            <span class="coverage-amount amount-highlight">${{ certificate.premium_amount|floatformat:0 }}</span>
+                        </div>
+                        <div class="coverage-item">
+                            <span class="coverage-label">Net Contribution:</span>
+                            <span class="coverage-amount">${{ certificate.net_contribution|floatformat:0 }}</span>
+                        </div>
+                        <div class="coverage-item">
+                            <span class="coverage-label">Total Premium:</span>
+                            <span class="coverage-amount amount-highlight">${{ certificate.total_premium|floatformat:0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coverage Period -->
+            <div class="section">
+                <div class="section-title">Coverage Period</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Start Date:</span>
+                        <span class="info-value">{{ certificate.start_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">End Date:</span>
+                        <span class="info-value">{{ certificate.end_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Days Remaining:</span>
+                        <span class="info-value">
+                            {% if certificate.days_remaining > 0 %}
+                                <span class="status-badge status-active">{{ certificate.days_remaining }} days</span>
+                            {% else %}
+                                <span class="status-badge status-expired">Expired</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code and Verification -->
+            <div class="qr-section">
+                <div class="verification-info">
+                    <div class="title">Verify Certificate Online</div>
+                    <div>Scan QR code or visit:</div>
+                    <div><strong>www.evertrust.uk/verify</strong></div>
+                    <div>Certificate ID: {{ certificate.policy_number }}</div>
+                </div>
+                <img src="{{ qr_code_path }}" alt="QR Code" class="qr-code" />
+            </div>
+
+            <!-- Signatures -->
+            <div class="signature-section">
+                <div class="signature-box">
+                    <img src="{{ signature_data_url }}" alt="James Fletcher Signature" class="signature-image" />
+                    <div class="signature-line"></div>
+                    <div class="signature-name">James Fletcher</div>
+                    <div class="signature-title">Insurance Agent</div>
+                </div>
+                re
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="contact-item">
+                <span>📞 +44 750 975 0594</span>
+            </div>
+            <div class="contact-item">
+                <span>🌐 www.evertrust.uk</span>
+            </div>
+            <div class="contact-item">
+                <span>✉️ support@evertrust.uk</span>
+            </div>
+        </footer>
+
+        <!-- Page Number -->
+        <div class="page-number">Page 1 of 1</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Financial Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4 text-primary"><i class="fas fa-chart-line me-2"></i>Financial Dashboard</h2>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Premiums</h6>
+                    <h4 class="fw-bold">${{ total_premiums }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Paid</h6>
+                    <h4 class="fw-bold text-success">${{ total_paid }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted">Outstanding</h6>
+                    <h4 class="fw-bold text-warning">${{ outstanding }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted">Overdue</h6>
+                    <h4 class="fw-bold text-danger">${{ overdue }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Certificates Financial Status</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Policy Number</th>
+                            <th>Client</th>
+                            <th>Premium</th>
+                            <th>Total Paid</th>
+                            <th>Outstanding</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cert in certificates %}
+                        <tr>
+                            <td>{{ cert.policy_number }}</td>
+                            <td>{{ cert.client_name }}</td>
+                            <td>${{ cert.premium_amount }}</td>
+                            <td>${{ cert.total_paid_amount }}</td>
+                            <td>${{ cert.remaining_amount }}</td>
+                            <td>
+                                {% if cert.payment_status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% elif cert.payment_status == 'overdue' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                {% elif cert.payment_status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif cert.payment_status == 'installment' %}
+                                    <span class="badge bg-info text-dark">Installment</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ cert.payment_status|capfirst }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center">No certificates found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,928 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_title|default:_('Management') }}{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Custom Admin CSS -->
+    <link href="{% static 'admin/css/custom_admin.css' %}" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Professional Corporate Color Palette */
+            --primary-color: #1a365d;
+            --primary-light: #2d5a87;
+            --primary-dark: #0f2a4a;
+            --secondary-color: #4a5568;
+            --accent-color: #3182ce;
+            --accent-light: #63b3ed;
+            
+            /* Corporate Status Colors */
+            --success-color: #38a169;
+            --success-light: #68d391;
+            --warning-color: #d69e2e;
+            --warning-light: #f6e05e;
+            --danger-color: #e53e3e;
+            --danger-light: #fc8181;
+            --info-color: #3182ce;
+            --info-light: #63b3ed;
+            --pending-color: #805ad5;
+            --pending-light: #b794f4;
+            
+            /* Professional Neutral Colors */
+            --white: #ffffff;
+            --gray-50: #f7fafc;
+            --gray-100: #edf2f7;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e0;
+            --gray-400: #a0aec0;
+            --gray-500: #718096;
+            --gray-600: #4a5568;
+            --gray-700: #2d3748;
+            --gray-800: #1a202c;
+            --gray-900: #171923;
+            --dark: #0f1419;
+            
+            /* Corporate Background Colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f7fafc;
+            --bg-tertiary: #edf2f7;
+            --bg-sidebar: #1a202c;
+            --bg-sidebar-hover: #2d3748;
+            --bg-header: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #1a365d 0%, #2d5a87 100%);
+            --bg-gradient-sidebar: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+            --bg-gradient-header: linear-gradient(135deg, #1a365d 0%, #3182ce 100%);
+            
+            /* Professional Text Colors */
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --text-white: #ffffff;
+            --text-sidebar: #e2e8f0;
+            --text-sidebar-active: #ffffff;
+            --text-link: #3182ce;
+            
+            /* Corporate Border Colors */
+            --border-color: #e2e8f0;
+            --border-light: #edf2f7;
+            --border-dark: #cbd5e0;
+            --border-focus: #3182ce;
+            
+            /* Professional Shadow System */
+            --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+            --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            
+            /* Corporate Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --spacing-3xl: 4rem;
+            
+            /* Corporate Typography */
+            --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-family-secondary: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-size-2xl: 1.5rem;
+            --font-size-3xl: 1.875rem;
+        }
+
+        * {
+            font-family: var(--font-family-primary);
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: var(--font-size-base);
+        }
+
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Professional Sidebar */
+        .admin-sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-2xl);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: var(--spacing-xl) var(--spacing-lg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-gradient-sidebar);
+            color: var(--text-white);
+            position: relative;
+        }
+
+        .sidebar-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.9) 0%, rgba(49, 130, 206, 0.7) 100%);
+            opacity: 0.95;
+        }
+
+        .sidebar-header h1 {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            position: relative;
+            z-index: 1;
+            color: var(--text-white);
+            letter-spacing: -0.025em;
+        }
+
+        .sidebar-nav {
+            padding: var(--spacing-md) 0;
+        }
+
+        .nav-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .nav-section-title {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--gray-400);
+            margin-bottom: var(--spacing-sm);
+            opacity: 0.8;
+        }
+
+        .nav-item {
+            margin: var(--spacing-xs) 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            color: var(--text-sidebar);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: var(--font-size-sm);
+            transition: all 0.3s ease;
+            border-radius: 0 var(--spacing-md) var(--spacing-md) 0;
+            margin-right: var(--spacing-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            transition: width 0.3s ease;
+            z-index: 0;
+        }
+
+        .nav-link:hover {
+            color: var(--text-sidebar-active);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .nav-link:hover::before {
+            width: 4px;
+        }
+
+        .nav-link.active {
+            color: var(--text-sidebar-active);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            box-shadow: var(--shadow-md);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active::before {
+            width: 4px;
+            background: var(--white);
+        }
+
+        .nav-link .icon {
+            width: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-link .count {
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.2);
+            color: inherit;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--spacing-sm);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Professional Main Content */
+        .admin-main {
+            flex: 1;
+            margin-left: 280px;
+            background: var(--bg-secondary);
+        }
+
+        .admin-header {
+            background: var(--bg-header);
+            padding: var(--spacing-md) var(--spacing-xl);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--spacing-md);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .user-menu:hover {
+            background: var(--primary-color);
+            color: var(--text-white);
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-white);
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+        }
+
+        .admin-content {
+            padding: var(--spacing-xl);
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Professional Cards */
+        .admin-card {
+            background: var(--bg-primary);
+            border-radius: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-light);
+        }
+
+        .admin-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            background: var(--bg-gradient-header);
+            color: var(--text-white);
+            padding: var(--spacing-lg);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .card-body {
+            padding: var(--spacing-lg);
+        }
+
+        /* Professional Buttons */
+        .btn-admin {
+            background: var(--bg-gradient-header);
+            border: none;
+            color: var(--text-white);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--spacing-md);
+            font-weight: 500;
+            font-size: var(--font-size-sm);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            color: var(--text-white);
+            text-decoration: none;
+        }
+
+        .btn-admin.btn-sm {
+            padding: var(--spacing-xs) var(--spacing-md);
+            font-size: var(--font-size-xs);
+        }
+
+        .btn-admin.btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+        }
+
+        .btn-admin.btn-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-light) 100%);
+        }
+
+        .btn-admin.btn-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-light) 100%);
+        }
+
+        .btn-admin.btn-info {
+            background: linear-gradient(135deg, var(--info-color) 0%, var(--info-light) 100%);
+        }
+
+        .btn-admin.btn-pending {
+            background: linear-gradient(135deg, var(--pending-color) 0%, var(--pending-light) 100%);
+        }
+
+        /* Professional Tables */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-primary);
+            border-radius: var(--spacing-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .admin-table th {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            font-size: var(--font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .admin-table td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+            color: var(--text-secondary);
+        }
+
+        .admin-table tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .admin-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Professional Badges */
+        .badge-admin {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--spacing-md);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-admin.badge-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+            color: var(--text-white);
+        }
+
+        .badge-admin.badge-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-light) 100%);
+            color: var(--text-white);
+        }
+
+        .badge-admin.badge-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-light) 100%);
+            color: var(--text-white);
+        }
+
+        .badge-admin.badge-info {
+            background: linear-gradient(135deg, var(--info-color) 0%, var(--info-light) 100%);
+            color: var(--text-white);
+        }
+
+        .badge-admin.badge-pending {
+            background: linear-gradient(135deg, var(--pending-color) 0%, var(--pending-light) 100%);
+            color: var(--text-white);
+        }
+
+        /* Professional Form Elements */
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--spacing-md);
+            font-size: var(--font-size-sm);
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--spacing-md);
+            font-size: var(--font-size-sm);
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .form-check-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        /* Financial Status Indicators */
+        .status-paid {
+            background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+            color: var(--text-white);
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-light) 100%);
+            color: var(--text-white);
+        }
+
+        .status-overdue {
+            background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-light) 100%);
+            color: var(--text-white);
+        }
+
+        .status-installment {
+            background: linear-gradient(135deg, var(--info-color) 0%, var(--info-light) 100%);
+            color: var(--text-white);
+        }
+
+        .status-cancelled {
+            background: linear-gradient(135deg, var(--gray-600) 0%, var(--gray-500) 100%);
+            color: var(--text-white);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+
+            .admin-main {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .admin-content {
+                padding: var(--spacing-md);
+            }
+        }
+
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: var(--font-size-xl);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: var(--spacing-sm);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--bg-secondary);
+            color: var(--primary-color);
+        }
+
+        /* Professional Animations */
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Professional Scrollbar */
+        .admin-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .admin-sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .admin-sidebar::-webkit-scrollbar-thumb {
+            background: var(--gray-600);
+            border-radius: 3px;
+        }
+
+        .admin-sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
+        }
+
+        /* Professional Alerts */
+        .alert {
+            border: none;
+            border-radius: var(--spacing-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+            color: var(--text-white);
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-light) 100%);
+            color: var(--text-white);
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-light) 100%);
+            color: var(--text-white);
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, var(--info-color) 0%, var(--info-light) 100%);
+            color: var(--text-white);
+        }
+
+        /* Financial Dashboard Cards */
+        .financial-card {
+            background: var(--bg-primary);
+            border-radius: var(--spacing-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .financial-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .financial-card.paid {
+            border-left-color: var(--success-color);
+        }
+
+        .financial-card.pending {
+            border-left-color: var(--warning-color);
+        }
+
+        .financial-card.overdue {
+            border-left-color: var(--danger-color);
+        }
+
+        .financial-card.installment {
+            border-left-color: var(--info-color);
+        }
+
+        .financial-amount {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .financial-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+    </style>
+
+    {% block extrastyle %}{% endblock %}
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Professional Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <h1>
+                    <i class="fas fa-shield-alt"></i>
+                    EverTrust
+                </h1>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Dashboard -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <div class="nav-item">
+                        <a href="{% url 'admin:index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt icon"></i>
+                            Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Certificate Management -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Certificate Management</div>
+                    <div class="nav-item">
+                        <a href="{% url 'admin:certificates_certificate_changelist' %}" class="nav-link {% if 'certificate' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-certificate icon"></i>
+                            Certificates
+                            <span class="count">{{ certificate_count|default:0 }}</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{% url 'admin:certificates_certificateverification_changelist' %}" class="nav-link {% if 'verification' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-search icon"></i>
+                            Verifications
+                            <span class="count">{{ verification_count|default:0 }}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Financial Management -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Financial Management</div>
+                    <div class="nav-item">
+                        <a href="{% url 'admin:certificates_financialtransaction_changelist' %}" class="nav-link {% if 'transaction' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-money-bill icon"></i>
+                            Transactions
+                            <span class="count">{{ transaction_count|default:0 }}</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{% url 'admin:certificates_payment_changelist' %}" class="nav-link {% if 'payment' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-credit-card icon"></i>
+                            Payments
+                            <span class="count">{{ payment_count|default:0 }}</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{% url 'admin:certificates_installment_changelist' %}" class="nav-link {% if 'installment' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-calendar-alt icon"></i>
+                            Installments
+                            <span class="count">{{ installment_count|default:0 }}</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{% url 'admin:certificates_invoice_changelist' %}" class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-file-invoice icon"></i>
+                            Invoices
+                            <span class="count">{{ invoice_count|default:0 }}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- System -->
+                <div class="nav-section">
+                    <div class="nav-section-title">System</div>
+                    <div class="nav-item">
+                        <a href="{% url 'dashboard' %}" class="nav-link">
+                            <i class="fas fa-chart-line icon"></i>
+                            Analytics
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{% url 'verify' %}" class="nav-link">
+                            <i class="fas fa-check-circle icon"></i>
+                            Verify Certificate
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/" class="nav-link">
+                            <i class="fas fa-home icon"></i>
+                            Public Site
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Professional Main Content -->
+        <main class="admin-main">
+            <!-- Professional Header -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="mb-0">{% block content_title %}{{ title }}{% endblock %}</h2>
+                </div>
+                
+                <div class="header-right">
+                    <a href="{% url 'verify' %}" class="btn-admin btn-sm">
+                        <i class="fas fa-search"></i>
+                        Verify
+                    </a>
+                    <a href="{% url 'admin:certificates_certificate_add' %}" class="btn-admin btn-success btn-sm">
+                        <i class="fas fa-plus"></i>
+                        New Certificate
+                    </a>
+                    <a href="/" class="user-menu">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>{{ user.get_full_name|default:user.username }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Professional Content -->
+            <div class="admin-content fade-in">
+                {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Admin JS -->
+    <script src="{% static 'admin/js/custom_admin.js' %}"></script>
+    
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.admin-sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Auto-hide sidebar on mobile when clicking outside
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.admin-sidebar');
+            const toggle = document.querySelector('.sidebar-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Add active class to current nav item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+
+    {% block extrajs %}{% endblock %}
+</body>
+</html> 

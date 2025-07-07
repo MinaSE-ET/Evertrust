@@ -1,0 +1,240 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Financial Analysis - Dashboard{% endblock %}
+{% block page_title %}Financial Analysis{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="display-6 fw-bold text-primary">Financial Analysis</h2>
+                <p class="lead text-muted">Comprehensive financial overview and analytics</p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{% url 'certificates:dashboard_financial_export' %}?format=csv&days={{ days }}" 
+                   class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-download me-2"></i>Export CSV
+                </a>
+                <a href="{% url 'certificates:dashboard_financial_export' %}?format=json&days={{ days }}" 
+                   class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-code me-2"></i>Export JSON
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="GET" class="d-flex">
+            <select name="days" class="form-select form-select-lg me-2">
+                <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+                <option value="365" {% if days == 365 %}selected{% endif %}>Last year</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-filter me-2"></i>Filter
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Financial Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-dollar-sign fa-3x text-success mb-3"></i>
+                <h3 class="h5 fw-bold">Total Premiums</h3>
+                <p class="h3 fw-bold text-success">${{ total_premium|floatformat:2 }}</p>
+                <small class="text-muted">{{ premium_count }} transactions</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h3 class="h5 fw-bold">Total Claims</h3>
+                <p class="h3 fw-bold text-warning">${{ total_claims|floatformat:2 }}</p>
+                <small class="text-muted">{{ claims_count }} transactions</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-percentage fa-3x text-info mb-3"></i>
+                <h3 class="h5 fw-bold">Commission</h3>
+                <p class="h3 fw-bold text-info">${{ total_commission|floatformat:2 }}</p>
+                <small class="text-muted">Total commission</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                <h3 class="h5 fw-bold">Net Revenue</h3>
+                <p class="h3 fw-bold {% if net_revenue >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    ${{ net_revenue|floatformat:2 }}
+                </p>
+                <small class="text-muted">Net profit/loss</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Financial Overview</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="financialChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="fas fa-pie-chart me-2"></i>Revenue Breakdown</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="pieChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-info text-white">
+        <h3 class="mb-0"><i class="fas fa-list me-2"></i>Recent Transactions</h3>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Transaction</th>
+                        <th>Type</th>
+                        <th>Certificate</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in recent_transactions %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ transaction.transaction_number }}</div>
+                            <small class="text-muted">{{ transaction.description|default:"No description" }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if transaction.transaction_type == 'premium' %}success{% elif transaction.transaction_type == 'claim' %}warning{% else %}info{% endif %}">
+                                {{ transaction.get_transaction_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if transaction.certificate %}
+                                <a href="{% url 'certificates:certificate_detail' transaction.certificate.policy_number %}" 
+                                   class="text-decoration-none">
+                                    {{ transaction.certificate.policy_number }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-bold {% if transaction.transaction_type == 'premium' %}text-success{% elif transaction.transaction_type == 'claim' %}text-warning{% else %}text-info{% endif %}">
+                                ${{ transaction.amount|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if transaction.status == 'completed' %}success{% elif transaction.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                {{ transaction.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.transaction_date|date:"M d, Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No transactions found for the selected period.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Simple Financial Summary -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Financial Summary</h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="border-end">
+                            <h4 class="text-success">${{ total_premium|floatformat:2 }}</h4>
+                            <p class="text-muted">Total Premiums</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border-end">
+                            <h4 class="text-warning">${{ total_claims|floatformat:2 }}</h4>
+                            <p class="text-muted">Total Claims</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <h4 class="{% if net_revenue >= 0 %}text-success{% else %}text-danger{% endif %}">${{ net_revenue|floatformat:2 }}</h4>
+                            <p class="text-muted">Net Revenue</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="fas fa-pie-chart me-2"></i>Revenue Breakdown</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Premiums</span>
+                    <span class="fw-bold text-success">${{ total_premium|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Claims</span>
+                    <span class="fw-bold text-warning">${{ total_claims|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Commission</span>
+                    <span class="fw-bold text-info">${{ total_commission|floatformat:2 }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">Net Revenue</span>
+                    <span class="fw-bold {% if net_revenue >= 0 %}text-success{% else %}text-danger{% endif %}">${{ net_revenue|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

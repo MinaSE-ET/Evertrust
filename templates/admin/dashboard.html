@@ -1,0 +1,226 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Admin Dashboard - EverTrust{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<!-- Welcome Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-section">
+            <h2 class="display-6 fw-bold text-primary mb-3">Welcome to EverTrust Admin</h2>
+            <p class="lead text-muted">Complete system overview and management</p>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
+                <h3 class="h5 fw-bold">Total Certificates</h3>
+                <p class="h2 fw-bold text-primary">{{ total_certificates }}</p>
+                <small class="text-muted">{{ active_certificates }} active, {{ pending_certificates }} pending</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-3x text-success mb-3"></i>
+                <h3 class="h5 fw-bold">Total Users</h3>
+                <p class="h2 fw-bold text-success">{{ total_users }}</p>
+                <small class="text-muted">{{ active_users }} active, {{ staff_users }} staff</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-dollar-sign fa-3x text-warning mb-3"></i>
+                <h3 class="h5 fw-bold">Total Premiums</h3>
+                <p class="h2 fw-bold text-warning">${{ total_premium|floatformat:2 }}</p>
+                <small class="text-muted">Total premium revenue</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                <h3 class="h5 fw-bold">Net Revenue</h3>
+                <p class="h2 fw-bold {% if net_revenue >= 0 %}text-success{% else %}text-danger{% endif %}">${{ net_revenue|floatformat:2 }}</p>
+                <small class="text-muted">Premiums - Claims</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="{% url 'certificates:manage_certificates' %}" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-certificate fa-2x mb-2"></i>
+                            <span>Manage Certificates</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'certificates:dashboard_users' %}" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <span>Manage Users</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'certificates:dashboard_financials' %}" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <span>Financial Analysis</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'certificates:certificate_create' %}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-plus fa-2x mb-2"></i>
+                            <span>Create Certificate</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row g-4">
+    <!-- Recent Certificates -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="fas fa-certificate me-2"></i>Recent Certificates</h3>
+            </div>
+            <div class="card-body">
+                {% for certificate in recent_certificates %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle me-3">
+                        <span class="avatar-text">{{ certificate.client_name|first|upper }}</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">{{ certificate.client_name }}</div>
+                        <small class="text-muted">{{ certificate.policy_number }} • {{ certificate.issue_date|date:"M d, Y" }}</small>
+                    </div>
+                    <span class="badge bg-{% if certificate.status == 'active' %}success{% elif certificate.status == 'pending' %}warning{% else %}secondary{% endif %}">
+                        {{ certificate.get_status_display }}
+                    </span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No recent certificates</p>
+                {% endfor %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'certificates:manage_certificates' %}" class="btn btn-outline-success btn-sm">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0"><i class="fas fa-users me-2"></i>Recent Users</h3>
+            </div>
+            <div class="card-body">
+                {% for user in recent_users %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle me-3">
+                        <span class="avatar-text">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                        <small class="text-muted">@{{ user.username }} • {{ user.date_joined|date:"M d, Y" }}</small>
+                    </div>
+                    <span class="badge bg-{% if user.is_staff %}warning{% else %}secondary{% endif %}">
+                        {% if user.is_superuser %}Superuser{% elif user.is_staff %}Staff{% else %}User{% endif %}
+                    </span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No recent users</p>
+                {% endfor %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'certificates:dashboard_users' %}" class="btn btn-outline-info btn-sm">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-warning text-white">
+                <h3 class="mb-0"><i class="fas fa-chart-line me-2"></i>Recent Transactions</h3>
+            </div>
+            <div class="card-body">
+                {% for transaction in recent_transactions %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="transaction-icon me-3">
+                        <i class="fas fa-{% if transaction.transaction_type == 'premium' %}plus{% elif transaction.transaction_type == 'claim' %}minus{% else %}exchange-alt{% endif %} text-{% if transaction.transaction_type == 'premium' %}success{% elif transaction.transaction_type == 'claim' %}danger{% else %}info{% endif %}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">{{ transaction.transaction_number }}</div>
+                        <small class="text-muted">{{ transaction.get_transaction_type_display }} • {{ transaction.transaction_date|date:"M d, Y" }}</small>
+                    </div>
+                    <span class="fw-bold text-{% if transaction.transaction_type == 'premium' %}success{% elif transaction.transaction_type == 'claim' %}danger{% else %}info{% endif %}">
+                        ${{ transaction.amount|floatformat:2 }}
+                    </span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No recent transactions</p>
+                {% endfor %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'certificates:dashboard_financials' %}" class="btn btn-outline-warning btn-sm">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.transaction-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.welcome-section {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    padding: 2rem;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+</style>
+{% endblock %} 

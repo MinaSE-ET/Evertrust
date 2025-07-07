@@ -1,0 +1,853 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Printable Certificate - {{ certificate.policy_number }}{% endblock %}
+
+{% block content %}
+<!-- No .printable-certificate wrapper -->
+<!-- Certificate Header: QR code only if present -->
+{% if certificate.policy_number %}
+<div class="print-qr-block">
+    <span class="print-qr-label">Policy Number:</span>
+    <span class="print-qr-number">{{ certificate.policy_number }}</span>
+    <span class="print-qr-label">Phone:</span>
+    <span class="print-qr-number">+44 750 975 0594</span>
+    <img src="{% url 'certificates:certificate_qr' certificate.policy_number %}" alt="QR Code" class="print-qr-img" />
+</div>
+{% endif %}
+<!-- Main certificate content goes here, without extra boxes -->
+<!-- Certificate Title -->
+<div class="cert-title">
+    <h2>{{ certificate.certificate_title }}</h2>
+    <div class="cert-id">Certificate ID: {{ certificate.policy_number }}</div>
+</div>
+
+<!-- Status Banner -->
+<div class="status-banner {% if certificate.is_active %}active{% else %}inactive{% endif %}">
+    {% if certificate.is_active %}
+        ✓ ACTIVE CERTIFICATE
+    {% else %}
+        ✗ INACTIVE CERTIFICATE
+    {% endif %}
+</div>
+
+<!-- Certificate Content -->
+<div class="cert-content">
+    <div class="info-sections">
+        <!-- Policy Information -->
+        <div class="info-section">
+            <h3>POLICY INFORMATION</h3>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="label">Policy Number:</span>
+                    <span class="value">{{ certificate.policy_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Issue Date:</span>
+                    <span class="value">{{ certificate.issue_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Status:</span>
+                    <span class="value status-badge {{ certificate.status }}">{{ certificate.get_status_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Payment Status:</span>
+                    <span class="value payment-badge {{ certificate.payment_status }}">{{ certificate.get_payment_status_display }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Information -->
+        <div class="info-section">
+            <h3>INSURED PERSON</h3>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="label">Full Name:</span>
+                    <span class="value">{{ certificate.client_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">ID Number:</span>
+                    <span class="value">{{ certificate.client_id_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Date of Birth:</span>
+                    <span class="value">{{ certificate.client_date_of_birth }}</span>
+                </div>
+                <div class="info-row full-width">
+                    <span class="label">Address:</span>
+                    <span class="value">{{ certificate.client_address|linebreaks }}</span>
+                </div>
+                {% if certificate.client_bank_name %}
+                <div class="info-row">
+                    <span class="label">Bank Name:</span>
+                    <span class="value">{{ certificate.client_bank_name }}</span>
+                </div>
+                {% endif %}
+                {% if certificate.client_bank_account %}
+                <div class="info-row">
+                    <span class="label">Bank Account:</span>
+                    <span class="value">{{ certificate.client_bank_account }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Insurance Details -->
+        <div class="info-section">
+            <h3>INSURANCE DETAILS</h3>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="label">Insurance Type:</span>
+                    <span class="value">{{ certificate.get_certificate_type_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Coverage Level:</span>
+                    <span class="value">{{ certificate.get_coverage_level_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Insured Amount:</span>
+                    <span class="value amount">${{ certificate.insured_amount|floatformat:2 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Premium Amount:</span>
+                    <span class="value amount">${{ certificate.premium_amount|floatformat:2 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Total Premium:</span>
+                    <span class="value amount">${{ certificate.total_premium|floatformat:2 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Deductible:</span>
+                    <span class="value amount">${{ certificate.deductible_amount|floatformat:2 }}</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Insurance Period -->
+        <div class="info-section">
+            <h3>INSURANCE PERIOD</h3>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="label">Start Date:</span>
+                    <span class="value">{{ certificate.start_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">End Date:</span>
+                    <span class="value">{{ certificate.end_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Duration:</span>
+                    <span class="value">{{ certificate.days_remaining|add:certificate.end_date|timeuntil:certificate.start_date }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Days Remaining:</span>
+                    <span class="value {% if certificate.days_remaining > 0 %}valid{% else %}expired{% endif %}">
+                        {% if certificate.days_remaining > 0 %}
+                            {{ certificate.days_remaining }} days
+                        {% else %}
+                            Expired
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Information -->
+        <div class="info-section">
+            <h3>FINANCIAL INFORMATION</h3>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="label">Total Paid:</span>
+                    <span class="value amount">${{ certificate.total_paid_amount|floatformat:2 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Remaining Amount:</span>
+                    <span class="value amount">${{ certificate.remaining_amount|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Information -->
+        {% if certificate.agent_name or certificate.agent_id %}
+        <div class="info-section">
+            <h3>AGENT INFORMATION</h3>
+            <div class="info-grid">
+                {% if certificate.agent_name %}
+                <div class="info-row">
+                    <span class="label">Agent Name:</span>
+                    <span class="value">{{ certificate.agent_name }}</span>
+                </div>
+                {% endif %}
+                {% if certificate.agent_id %}
+                <div class="info-row">
+                    <span class="label">Agent ID:</span>
+                    <span class="value">{{ certificate.agent_id }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Additional Information -->
+    {% if certificate.description or certificate.terms_conditions or certificate.special_conditions %}
+    <div class="additional-info">
+        {% if certificate.description %}
+        <div class="info-section">
+            <h3>DESCRIPTION</h3>
+            <p class="description-text">{{ certificate.description }}</p>
+        </div>
+        {% endif %}
+        
+        {% if certificate.terms_conditions %}
+        <div class="info-section">
+            <h3>TERMS & CONDITIONS</h3>
+            <p class="description-text">{{ certificate.terms_conditions }}</p>
+        </div>
+        {% endif %}
+        
+        {% if certificate.special_conditions %}
+        <div class="info-section">
+            <h3>SPECIAL CONDITIONS</h3>
+            <p class="description-text">{{ certificate.special_conditions }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Signature and Seal Row -->
+<div class="signature-seal-row">
+    <div class="certificate-signature">
+        <img src="{% static 'images/signature.png' %}" alt="Signature" class="signature-img" />
+        <div class="sig-line"></div>
+        <div class="sig-label">Authorized Signature</div>
+    </div>
+    <div class="certificate-seal print-seal-center">
+        <img src="{% static 'images/seal evertrust.png' %}" alt="Official Seal" class="seal-img" />
+        <div class="seal-label">Official Seal</div>
+    </div>
+</div>
+
+<!-- Print Button -->
+<div class="print-section d-print-none">
+    <button class="btn btn-primary" onclick="window.print()">
+        <i class="fas fa-print me-2"></i>Print Certificate
+    </button>
+    {% if certificate.policy_number %}
+    <a href="{% url 'certificates:certificate_detail' certificate.policy_number %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Certificate
+    </a>
+    {% else %}
+    <span class="btn btn-secondary disabled">No Certificate Link</span>
+    {% endif %}
+</div>
+
+<!-- Debit Note Attachment -->
+<div class="debit-note-attachment">
+    <div class="debit-note-header">
+        <img src="{% static 'images/Evertrust-logo.png' %}" alt="EverTrust Logo" class="debit-note-logo" />
+        <div class="debit-note-title">Debit Note</div>
+    </div>
+    <table class="debit-note-table">
+        <tr><td class="label">Policy Number</td><td class="value">{{ certificate.policy_number }}</td></tr>
+        <tr><td class="label">Client Name</td><td class="value">{{ certificate.client_name }}</td></tr>
+        <tr><td class="label">Issue Date</td><td class="value">{{ certificate.issue_date|date:'F d, Y' }}</td></tr>
+    </table>
+    <div class="debit-note-amount">
+        <span class="amount-label">Amount Due:</span>
+        <span class="amount-value">${{ certificate.total_premium|floatformat:2 }}</span>
+    </div>
+    <div class="debit-note-details">
+        <strong>Details:</strong>
+        <p>This debit note is issued for the above policy. Please settle the amount due at your earliest convenience. For any inquiries, contact our support team.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Printable Certificate Styles */
+.printable-certificate {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: 'Times New Roman', serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* QR Code Block */
+.print-qr-block {
+    text-align: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.print-qr-label {
+    font-weight: bold;
+    color: #374151;
+    margin-right: 10px;
+}
+
+.print-qr-number {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin-right: 20px;
+}
+
+.print-qr-img {
+    width: 100px;
+    height: 100px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Certificate Header */
+.cert-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+    position: relative;
+}
+
+.logo {
+    max-height: 80px;
+    filter: brightness(0) invert(1);
+    margin-bottom: 20px;
+}
+
+/* Certificate Title */
+.cert-title {
+    text-align: center;
+    padding: 40px 40px 20px;
+    background: white;
+    border-bottom: 3px solid #1e3a8a;
+}
+
+.cert-title h2 {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin: 0 0 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.cert-id {
+    font-size: 1.1rem;
+    color: #666;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+/* Status Banner */
+.status-banner {
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.status-banner.active {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: white;
+}
+
+.status-banner.inactive {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    color: white;
+}
+
+/* Certificate Content */
+.cert-content {
+    padding: 40px;
+    background: white;
+}
+
+.info-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+/* Info Sections */
+.info-section {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 25px;
+    background: #f9fafb;
+}
+
+.info-section h3 {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #1e3a8a;
+    padding-bottom: 10px;
+}
+
+.info-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row.full-width {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.label {
+    font-weight: bold;
+    color: #374151;
+    min-width: 140px;
+}
+
+.value {
+    font-weight: 500;
+    color: #111827;
+    text-align: right;
+}
+
+.info-row.full-width .value {
+    text-align: left;
+}
+
+.amount {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #059669;
+}
+
+.status-badge, .payment-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.active, .payment-badge.paid {
+    background: #059669;
+    color: white;
+}
+
+.status-badge.expired, .payment-badge.overdue {
+    background: #dc2626;
+    color: white;
+}
+
+.status-badge.pending, .payment-badge.pending {
+    background: #d97706;
+    color: white;
+}
+
+.valid {
+    color: #059669;
+    font-weight: bold;
+}
+
+.expired {
+    color: #dc2626;
+    font-weight: bold;
+}
+
+/* Additional Information */
+.additional-info {
+    margin-top: 30px;
+}
+
+.description-text {
+    margin: 0;
+    line-height: 1.6;
+    color: #374151;
+}
+
+/* Signature and Seal Row */
+.signature-seal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 40px;
+    background: white;
+    border-top: 2px solid #e5e7eb;
+}
+
+.certificate-signature {
+    text-align: center;
+    flex: 1;
+}
+
+.signature-img {
+    max-width: 200px;
+    max-height: 80px;
+    display: block;
+    margin: 0 auto 10px;
+}
+
+.sig-line {
+    width: 200px;
+    height: 2px;
+    background: #333;
+    margin: 10px auto;
+}
+
+.sig-label {
+    font-weight: bold;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.certificate-seal {
+    text-align: center;
+    flex: 1;
+}
+
+.seal-img {
+    max-width: 120px;
+    max-height: 120px;
+    display: block;
+    margin: 0 auto 10px;
+}
+
+.seal-label {
+    font-weight: bold;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+/* Print Section */
+.print-section {
+    padding: 30px 40px;
+    text-align: center;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+    margin: 0 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 12px 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+}
+
+/* Debit Note Styles */
+.debit-note-attachment {
+    page-break-before: always;
+    padding: 40px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    margin: 20px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.debit-note-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1e3a8a;
+}
+
+.debit-note-logo {
+    max-height: 40px;
+    margin-right: 20px;
+}
+
+.debit-note-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1e3a8a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.debit-note-table {
+    width: 100%;
+    margin-bottom: 30px;
+    border-collapse: collapse;
+}
+
+.debit-note-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.debit-note-table .label {
+    font-weight: bold;
+    color: #374151;
+    width: 40%;
+}
+
+.debit-note-table .value {
+    color: #111827;
+    text-align: left;
+}
+
+.debit-note-amount {
+    text-align: center;
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 2px solid #1e3a8a;
+}
+
+.amount-label {
+    font-weight: bold;
+    color: #374151;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.amount-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1e3a8a;
+    font-family: 'Courier New', monospace;
+}
+
+.debit-note-details {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 4px solid #1e3a8a;
+}
+
+.debit-note-details strong {
+    color: #1e3a8a;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.debit-note-details p {
+    margin: 0;
+    line-height: 1.6;
+    color: #374151;
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .printable-certificate {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+    
+    .d-print-none {
+        display: none !important;
+    }
+    
+    .cert-header {
+        background: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .status-banner.active {
+        background: #059669 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .status-banner.inactive {
+        background: #dc2626 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .info-section {
+        background: #f9fafb !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .cert-footer {
+        background: #f8fafc !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .status-badge.active, .payment-badge.paid {
+        background: #059669 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .status-badge.expired, .payment-badge.overdue {
+        background: #dc2626 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .amount {
+        color: #059669 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .valid {
+        color: #059669 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .expired {
+        color: #dc2626 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .company-name {
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .cert-title h2 {
+        color: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .info-section h3 {
+        color: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .verification-text {
+        color: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .debit-note-attachment {
+        page-break-before: always;
+        border: 2px solid #e5e7eb !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .debit-note-title {
+        color: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .amount-value {
+        color: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+    
+    .debit-note-details strong {
+        color: #1e3a8a !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .printable-certificate {
+        margin: 10px;
+        border-radius: 0;
+    }
+    
+    .cert-header {
+        padding: 20px;
+    }
+    
+    .cert-title {
+        padding: 20px;
+    }
+    
+    .cert-title h2 {
+        font-size: 1.6rem;
+    }
+    
+    .cert-content {
+        padding: 20px;
+    }
+    
+    .info-sections {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .cert-footer {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .verification-info {
+        margin-left: 0;
+    }
+    
+    .print-section {
+        padding: 20px;
+    }
+    
+    .btn {
+        margin: 5px;
+        display: block;
+        width: 100%;
+    }
+    
+    .signature-seal-row {
+        flex-direction: column;
+        gap: 30px;
+        text-align: center;
+    }
+    
+    .debit-note-attachment {
+        margin: 10px;
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Certificate Verification - {{ certificate.policy_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+    background: #eaf0f6;
+}
+.certificate-official {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #fff;
+    border: 2px solid #0a3d62;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(10,61,98,0.10);
+    padding: 48px 40px 32px 40px;
+    position: relative;
+    font-family: 'Segoe UI', 'Arial', 'sans-serif';
+    transition: box-shadow 0.2s;
+}
+.certificate-header {
+    text-align: center;
+    margin-bottom: 32px;
+    position: relative;
+}
+.certificate-header img {
+    width: 120px;
+    margin-bottom: 12px;
+}
+.certificate-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #0a3d62;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+}
+.certificate-subtitle {
+    font-size: 1.2rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+.certificate-id-qr {
+    position: absolute;
+    top: 32px;
+    right: 40px;
+    text-align: right;
+}
+.certificate-id-qr span {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0a3d62;
+    margin-bottom: 6px;
+}
+.certificate-id-qr img {
+    width: 90px;
+    height: 90px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 4px;
+}
+.certificate-section {
+    margin-bottom: 28px;
+}
+.certificate-section-title {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: #0a3d62;
+    border-bottom: 1px solid #e0e6ed;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    letter-spacing: 1px;
+}
+.certificate-info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.certificate-info-table td {
+    padding: 7px 0;
+    font-size: 1.08rem;
+}
+.certificate-info-table .label {
+    color: #555;
+    font-weight: 600;
+    width: 180px;
+}
+.certificate-info-table .value {
+    color: #222;
+    font-weight: 500;
+}
+.certificate-signature {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+.certificate-signature .sig-line {
+    border-top: 1.5px solid #0a3d62;
+    width: 220px;
+    margin-bottom: 4px;
+}
+.certificate-signature .sig-label {
+    color: #555;
+    font-size: 0.95rem;
+    margin-top: 2px;
+}
+.certificate-issued-date {
+    color: #0a3d62;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.certificate-watermark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.07;
+    z-index: 0;
+    pointer-events: none;
+    width: 70%;
+}
+/* SCREEN ONLY: Add a colored info bar and shadow */
+@media screen {
+    .certificate-official {
+        box-shadow: 0 8px 32px rgba(10,61,98,0.18);
+        border: 2.5px solid #1976d2;
+    }
+    .certificate-info-bar {
+        background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+        color: #fff;
+        padding: 16px 32px;
+        border-radius: 12px;
+        margin-bottom: 32px;
+        font-size: 1.1rem;
+        font-weight: 500;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+        text-align: center;
+    }
+}
+/* PRINT ONLY: Remove color, shadow, and extra info, use classic font */
+@media print {
+    body, html {
+        background: #fff !important;
+    }
+    .certificate-official {
+        box-shadow: none !important;
+        border: 2px solid #222 !important;
+        padding: 32px 24px 24px 24px !important;
+        font-family: 'Georgia', 'Times New Roman', Times, serif !important;
+    }
+    .certificate-header img {
+        width: 100px !important;
+    }
+    .certificate-id-qr {
+        right: 24px !important;
+        top: 24px !important;
+    }
+    .certificate-watermark {
+        width: 80% !important;
+    }
+    .certificate-info-bar, nav, .action-buttons, .contact-info, .btn, .d-print-none {
+        display: none !important;
+    }
+    .certificate-section-title {
+        color: #111 !important;
+        border-bottom: 1px solid #bbb !important;
+    }
+    .certificate-title, .certificate-issued-date {
+        color: #111 !important;
+    }
+    .certificate-official {
+        background: #fff !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="certificate-official position-relative">
+    <div class="certificate-overlay">
+    <div class="certificate-header-flex">
+        <div class="header-left">
+            <img src="{% static 'images/Evertrust-logo.png' %}" alt="Ever Trust Logo" class="header-logo" />
+            <div class="certificate-title">INSURANCE CERTIFICATE</div>
+        </div>
+        <div class="header-right">
+            <div class="certificate-id-qr">
+                <span>Policy Number: {{ certificate.policy_number }}</span>
+                {% if certificate.policy_number %}
+                <img src="{% url 'certificates:certificate_qr' certificate.policy_number %}" alt="QR Code" class="qr-large" />
+                {% else %}
+                <span class="text-muted">No Policy Number</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <img src="{% static 'images/Evertrust-logo.png' %}" class="certificate-watermark" alt="Watermark" />
+    <div class="certificate-section">
+        <div class="certificate-section-title">Certificate Information</div>
+        <table class="certificate-info-table">
+            <tr><td class="label">Policy Number:</td><td class="value">{{ certificate.policy_number }}</td></tr>
+            <tr><td class="label">Issue Date:</td><td class="value">{{ certificate.issue_date|date:'F d, Y' }}</td></tr>
+            <tr><td class="label">Status:</td><td class="value">{{ certificate.get_status_display }}</td></tr>
+            <tr><td class="label">Payment Status:</td><td class="value">{{ certificate.get_payment_status_display }}</td></tr>
+        </table>
+    </div>
+    <div class="certificate-section">
+        <div class="certificate-section-title">Client/Member Information</div>
+        <table class="certificate-info-table">
+            <tr><td class="label">Name:</td><td class="value">{{ certificate.client_name }}</td></tr>
+            <tr><td class="label">Address:</td><td class="value">{{ certificate.client_address|linebreaks }}</td></tr>
+            <tr><td class="label">ID Number:</td><td class="value">{{ certificate.client_id_number }}</td></tr>
+            <tr><td class="label">Date of Birth:</td><td class="value">{{ certificate.client_date_of_birth }}</td></tr>
+            <tr><td class="label">Location:</td><td class="value">{{ certificate.location }}</td></tr>
+            <tr><td class="label">Activity:</td><td class="value">{{ certificate.activity }}</td></tr>
+        </table>
+    </div>
+    <div class="certificate-section">
+        <div class="certificate-section-title">Insurance Details</div>
+        <table class="certificate-info-table">
+            <tr><td class="label">Insurance Type:</td><td class="value">{{ certificate.get_certificate_type_display }}</td></tr>
+            <tr><td class="label">Coverage Level:</td><td class="value">{{ certificate.get_coverage_level_display }}</td></tr>
+            <tr><td class="label">Insured Amount:</td><td class="value">${{ certificate.insured_amount|floatformat:2 }}</td></tr>
+            <tr><td class="label">Premium Amount:</td><td class="value">${{ certificate.premium_amount|floatformat:2 }}</td></tr>
+        </table>
+    </div>
+    
+    <!-- Coverage Summary Section -->
+    <div class="certificate-section">
+        <div class="certificate-section-title">Coverage Summary</div>
+        <div class="coverage-summary">
+            <div class="summary-item">
+                <span class="summary-label">Total Coverage:</span>
+                <span class="summary-value">${{ coverage_summary.insured_amount|floatformat:2 }}</span>
+                <span class="summary-description">Maximum amount covered by this policy</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Client Premium:</span>
+                <span class="summary-value">${{ coverage_summary.premium_amount|floatformat:2 }}</span>
+                <span class="summary-description">Amount paid by the client</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Total Premium:</span>
+                <span class="summary-value">${{ coverage_summary.total_premium|floatformat:2 }}</span>
+                <span class="summary-description">Total calculated premium including all fees</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Net Contribution:</span>
+                <span class="summary-value">${{ coverage_summary.net_contribution|floatformat:2 }}</span>
+                <span class="summary-description">Base contribution amount</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Total Fees:</span>
+                <span class="summary-value">${{ coverage_summary.total_fees|floatformat:2 }}</span>
+                <span class="summary-description">Sum of all additional fees and stamps</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Coverage Ratio:</span>
+                <span class="summary-value">{{ coverage_summary.coverage_ratio|floatformat:2 }}%</span>
+                <span class="summary-description">Premium as percentage of coverage</span>
+            </div>
+        </div>
+    </div>
+    <div class="certificate-section">
+        <div class="certificate-section-title">Coverage Period</div>
+        <table class="certificate-info-table">
+            <tr><td class="label">Start Date:</td><td class="value">{{ certificate.start_date|date:'F d, Y' }}</td></tr>
+            <tr><td class="label">End Date:</td><td class="value">{{ certificate.end_date|date:'F d, Y' }}</td></tr>
+            <tr><td class="label">Days Remaining:</td><td class="value">{% if certificate.days_remaining > 0 %}{{ certificate.days_remaining }} days{% else %}Expired{% endif %}</td></tr>
+        </table>
+    </div>
+    <div class="certificate-summary">
+        <h2>Comprehensive General Liability Policy Schedule</h2>
+        <p><strong>Policy No:</strong> {{ certificate.policy_number }}</p>
+        <p><strong>Date:</strong> {{ certificate.issue_date|date:'d/m/Y' }}</p>
+        <p>This certificate outlines the terms and scope of the Comprehensive General Liability Insurance issued by EverTrust Travel Insurance to the below-named member.</p>
+        <h3>Client/Member Details</h3>
+        <p><strong>Name:</strong> {{ certificate.client_name }}</p>
+        <p><strong>Location:</strong> {{ certificate.location }}</p>
+        <p><strong>Activity:</strong> {{ certificate.activity }}</p>
+        <p><strong>Description of Risk:</strong> This policy indemnifies the Insured against legal liability for bodily injury to third parties arising from the Insured's business activities.</p>
+        <h3>Period of Insurance</h3>
+        <p><strong>From:</strong> {{ certificate.period_from|date:'d/m/Y' }}</p>
+        <p><strong>To:</strong> {{ certificate.period_to|date:'d/m/Y' }}</p>
+        <h3>Limit of Liability: Third Party Liability</h3>
+        <p><strong>for death or bodily injury (any one person):</strong> {{ certificate.liability_per_person|floatformat:2 }} USD</p>
+        <p><strong>For bodily injury (any one occurrence):</strong> {{ certificate.liability_per_occurrence|floatformat:2 }} USD</p>
+        <p><strong>Aggregate limit during the period of insurance:</strong> {{ certificate.liability_aggregate|floatformat:2 }} USD</p>
+        <h3>Contribution Calculation</h3>
+        <ul>
+            <li><strong>Net Contribution:</strong> {{ certificate.net_contribution|floatformat:2 }} USD</li>
+            <li><strong>½ Proportional Stamp:</strong> {{ certificate.proportional_stamp|floatformat:2 }} USD</li>
+            <li><strong>½ Dimensional Stamp:</strong> {{ certificate.dimensional_stamp|floatformat:2 }} USD</li>
+            <li><strong>Supervision Fees:</strong> {{ certificate.supervision_fees|floatformat:2 }} USD</li>
+            <li><strong>Insurance Fees:</strong> {{ certificate.insurance_fees|floatformat:2 }} USD</li>
+            <li><strong>Total Premium:</strong> {{ certificate.total_premium|floatformat:2 }} USD</li>
+            <li><strong>Total Premium (words):</strong> {{ certificate.total_premium_words }}</li>
+        </ul>
+        <h3>Terms and Conditions</h3>
+        <p><strong>General Conditions:</strong> As per EverTrust Travel Insurance standard policy terms and conditions.</p>
+        <p><strong>Special Condition:</strong> Territorial Limits: Egypt (On Shore Only)<br>Jurisdiction & Law: Egypt.</p>
+    </div>
+    <div class="signature-seal-row">
+        <div class="certificate-signature">
+            <img src="{% static 'images/signature.png' %}" alt="Signature" class="signature-img" />
+            <div class="sig-line"></div>
+            <div class="sig-label">Authorized Signature</div>
+        </div>
+        <div class="certificate-seal print-seal-center">
+            <img src="{% static 'images/seal evertrust.png' %}" alt="Official Seal" class="seal-img" />
+            <div class="seal-label">Official Seal</div>
+        </div>
+    </div>
+    <div class="text-center mt-4 d-print-none">
+        <div class="btn-group" role="group">
+            {% if certificate.policy_number %}
+            <a href="{% url 'certificates:certificate_pdf_professional' certificate.policy_number %}" class="btn btn-danger">
+                <i class="fas fa-file-pdf me-2"></i>Download Professional PDF
+            </a>
+            <a href="{% url 'certificates:printable_certificate' certificate.policy_number %}" class="btn btn-success">
+                <i class="fas fa-print me-2"></i>Printable Version
+            </a>
+            {% else %}
+            <span class="btn btn-secondary disabled">No Printable Version</span>
+            {% endif %}
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Print This Page
+            </button>
+        </div>
+    </div>
+    <div class="powered-by-footer">Powered by EverTrust</div>
+    </div>
+</div>
+<div class="certificate-info-bar d-print-none">
+    <i class="fas fa-info-circle me-2"></i>
+    This is a digital view. For an official hard copy, use the print button below.
+</div>
+{% endblock %} 

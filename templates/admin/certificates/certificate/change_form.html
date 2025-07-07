@@ -1,0 +1,281 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+/* Certificate Form Styling */
+.certificate-form {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+.form-section h2 {
+    color: #1e3a8a;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #1e3a8a;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+    text-transform: none;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-field label {
+    font-weight: bold;
+    color: #374151;
+    margin-bottom: 5px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    outline: none;
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.help-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.required-field {
+    color: #dc2626;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-active {
+    background: #059669;
+    color: white;
+}
+
+.status-expired {
+    background: #dc2626;
+    color: white;
+}
+
+.status-pending {
+    background: #d97706;
+    color: white;
+}
+
+.payment-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.payment-paid {
+    background: #059669;
+    color: white;
+}
+
+.payment-pending {
+    background: #d97706;
+    color: white;
+}
+
+.payment-overdue {
+    background: #dc2626;
+    color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .certificate-form {
+        margin: 10px;
+    }
+}
+</style>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function() {
+    // Coverage level defaults
+    const coverageDefaults = {
+        'comprehensive': {
+            'insured_amount': 10000000,  // 10M coverage
+            'liability_per_person': 5000000,
+            'liability_per_occurrence': 5000000,
+            'liability_aggregate': 5000000,
+            'net_contribution': 10000,
+            'proportional_stamp': 500,
+            'dimensional_stamp': 2,
+            'supervision_fees': 89.97,
+            'insurance_fees': 58.03,
+            'total_premium': 10650,
+            'premium_amount': 10650,  // Same as total premium
+            'total_premium_words': "Ten Thousand Six Hundred Fifty US Dollars",
+        },
+        'basic': {
+            'insured_amount': 2000000,  // 2M coverage
+            'liability_per_person': 100000,
+            'liability_per_occurrence': 500000,
+            'liability_aggregate': 1000000,
+            'net_contribution': 5000,
+            'proportional_stamp': 0,
+            'dimensional_stamp': 0,
+            'supervision_fees': 0,
+            'insurance_fees': 0,
+            'total_premium': 5000,
+            'premium_amount': 5000,  // Same as total premium
+            'total_premium_words': "Five Thousand US Dollars",
+        },
+        'standard': {
+            'insured_amount': 5000000,  // 5M coverage
+            'liability_per_person': 500000,
+            'liability_per_occurrence': 1500000,
+            'liability_aggregate': 2500000,
+            'net_contribution': 7000,
+            'proportional_stamp': 250,
+            'dimensional_stamp': 1,
+            'supervision_fees': 45,
+            'insurance_fees': 30,
+            'total_premium': 7326,
+            'premium_amount': 7326,  // Same as total premium
+            'total_premium_words': "Seven Thousand Three Hundred Twenty-Six US Dollars",
+        },
+        'premium': {
+            'insured_amount': 8000000,  // 8M coverage
+            'liability_per_person': 1000000,
+            'liability_per_occurrence': 3000000,
+            'liability_aggregate': 4000000,
+            'net_contribution': 8500,
+            'proportional_stamp': 350,
+            'dimensional_stamp': 1.5,
+            'supervision_fees': 60,
+            'insurance_fees': 40,
+            'total_premium': 8951.5,
+            'premium_amount': 8951.5,  // Same as total premium
+            'total_premium_words': "Eight Thousand Nine Hundred Fifty-One and 50/100 US Dollars",
+        },
+        'elite': {
+            'insured_amount': 20000000,  // 20M coverage
+            'liability_per_person': 10000000,
+            'liability_per_occurrence': 10000000,
+            'liability_aggregate': 10000000,
+            'net_contribution': 20000,
+            'proportional_stamp': 1000,
+            'dimensional_stamp': 5,
+            'supervision_fees': 150,
+            'insurance_fees': 100,
+            'total_premium': 21255,
+            'premium_amount': 21255,  // Same as total premium
+            'total_premium_words': "Twenty-One Thousand Two Hundred Fifty-Five US Dollars",
+        },
+    };
+
+    // Function to update form fields
+    function updateFields(coverageLevel) {
+        const defaults = coverageDefaults[coverageLevel];
+        if (!defaults) return;
+
+        // Update each field if it exists
+        Object.keys(defaults).forEach(fieldName => {
+            const field = document.getElementById('id_' + fieldName);
+            if (field) {
+                if (field.type === 'number' || field.type === 'text') {
+                    field.value = defaults[fieldName];
+                } else if (field.tagName === 'TEXTAREA') {
+                    field.value = defaults[fieldName];
+                }
+            }
+        });
+    }
+
+    // Get the coverage level select field
+    const coverageSelect = document.getElementById('id_coverage_level');
+    if (coverageSelect) {
+        // Update fields when coverage level changes
+        coverageSelect.addEventListener('change', function() {
+            updateFields(this.value);
+        });
+
+        // Also update on page load with current value
+        updateFields(coverageSelect.value);
+    }
+
+    // Add visual enhancements
+    const statusField = document.getElementById('id_status');
+    const paymentStatusField = document.getElementById('id_payment_status');
+    
+    if (statusField) {
+        statusField.addEventListener('change', function() {
+            updateStatusBadge(this.value, 'status');
+        });
+        updateStatusBadge(statusField.value, 'status');
+    }
+    
+    if (paymentStatusField) {
+        paymentStatusField.addEventListener('change', function() {
+            updateStatusBadge(this.value, 'payment');
+        });
+        updateStatusBadge(paymentStatusField.value, 'payment');
+    }
+
+    function updateStatusBadge(value, type) {
+        const field = type === 'status' ? statusField : paymentStatusField;
+        if (field) {
+            field.className = field.className.replace(/status-\w+|payment-\w+/g, '');
+            if (type === 'status') {
+                field.classList.add('status-' + value);
+            } else {
+                field.classList.add('payment-' + value);
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="certificate-form">
+    {{ block.super }}
+</div>
+{% endblock %} 

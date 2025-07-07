@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 fw-bold text-primary">Admin Dashboard</h1>
+            <p class="lead">Welcome to your professional admin panel. Use the navigation below to manage certificates, users, and financials.</p>
+        </div>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
+                    <h2 class="h4 fw-bold">Certificates</h2>
+                    <p class="mb-2">Total: <span class="fw-bold">{{ cert_count }}</span></p>
+                    <a href="{% url 'certificates:manage_certificates' %}" class="btn btn-outline-primary btn-lg w-100 mt-2">Manage Certificates</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h2 class="h4 fw-bold">Users</h2>
+                    <p class="mb-2">Active: <span class="fw-bold">{{ user_count }}</span></p>
+                    <a href="{% url 'certificates:dashboard_users' %}" class="btn btn-outline-primary btn-lg w-100 mt-2">Manage Users</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h2 class="h4 fw-bold">Financials</h2>
+                    <p class="mb-1">Premiums: <span class="fw-bold">${{ total_premium|floatformat:2 }}</span></p>
+                    <p class="mb-1">Claims: <span class="fw-bold">${{ total_claims|floatformat:2 }}</span></p>
+                    <p class="mb-2">Net Revenue: <span class="fw-bold">${{ net_revenue|floatformat:2 }}</span></p>
+                    <a href="{% url 'certificates:dashboard_financials' %}" class="btn btn-outline-primary btn-lg w-100 mt-2">Financial Analysis</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <a href="{% url 'certificates:manage_certificates' %}" class="btn btn-primary btn-lg mx-2">
+                <i class="fas fa-certificate me-2"></i>Certificates
+            </a>
+            <a href="{% url 'certificates:dashboard_users' %}" class="btn btn-primary btn-lg mx-2">
+                <i class="fas fa-users me-2"></i>Users
+            </a>
+            <a href="{% url 'certificates:dashboard_financials' %}" class="btn btn-primary btn-lg mx-2">
+                <i class="fas fa-chart-line me-2"></i>Financials
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

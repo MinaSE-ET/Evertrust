@@ -1,0 +1,554 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="admin-card mb-4">
+        <div class="card-header">
+            <i class="fas fa-tachometer-alt"></i>
+            <!-- Remove 'Welcome to EverTrust Insurance Management' if logo is present -->
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-2">Hello, {{ user.get_full_name|default:user.username }}!</h3>
+                    <p class="text-muted mb-0">
+                        Welcome back to your insurance management dashboard. Here's what's happening with your system today.
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="text-muted">
+                        <i class="fas fa-clock me-2"></i>
+                        {{ current_time|date:"F d, Y" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-certificate"></i>
+            </div>
+            <div class="number">{{ total_certificates }}</div>
+            <div class="label">Total Certificates</div>
+            <div class="trend positive">
+                <i class="fas fa-arrow-up"></i> +12% this month
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="number">{{ active_certificates }}</div>
+            <div class="label">Active Certificates</div>
+            <div class="trend positive">
+                <i class="fas fa-arrow-up"></i> +8% this month
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="number">{{ total_verifications }}</div>
+            <div class="label">Today's Verifications</div>
+            <div class="trend positive">
+                <i class="fas fa-arrow-up"></i> +15% today
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="number">${{ total_revenue|floatformat:0 }}</div>
+            <div class="label">Total Revenue</div>
+            <div class="trend positive">
+                <i class="fas fa-arrow-up"></i> +23% this month
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2>
+            <i class="fas fa-bolt"></i>
+            Quick Actions
+        </h2>
+        <div class="quick-actions-grid">
+            <a href="{% url 'admin:certificates_certificate_add' %}" class="action-item">
+                <div class="icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <h3>Create Certificate</h3>
+                <p>Add a new insurance certificate</p>
+            </a>
+
+            <a href="{% url 'certificates:verify' %}" class="action-item">
+                <div class="icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Verify Certificate</h3>
+                <p>Check certificate validity</p>
+            </a>
+
+            <a href="{% url 'admin:certificates_financialtransaction_add' %}" class="action-item">
+                <div class="icon">
+                    <i class="fas fa-money-bill"></i>
+                </div>
+                <h3>Add Transaction</h3>
+                <p>Record financial transaction</p>
+            </a>
+
+            <a href="{% url 'certificates:export_data' %}?format=csv&model=certificates" class="action-item">
+                <div class="icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <h3>Export Data</h3>
+                <p>Download reports and data</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+        <h2>
+            <i class="fas fa-clock"></i>
+            Recent Activity
+        </h2>
+        <ul class="activity-list">
+            {% for certificate in recent_certificates %}
+            <li class="activity-item">
+                <div class="activity-icon create">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">New certificate created: {{ certificate.certificate_id }}</div>
+                    <div class="activity-time">{{ certificate.created_at|timesince }} ago</div>
+                </div>
+            </li>
+            {% endfor %}
+            
+            {% for verification in recent_verifications %}
+            <li class="activity-item">
+                <div class="activity-icon verify">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">
+                        Certificate verification: {{ verification.certificate_id_entered }}
+                        {% if verification.is_successful %}
+                            <span class="badge-admin badge-success">Success</span>
+                        {% else %}
+                            <span class="badge-admin badge-danger">Failed</span>
+                        {% endif %}
+                    </div>
+                    <div class="activity-time">{{ verification.verification_date|timesince }} ago</div>
+                </div>
+            </li>
+            {% endfor %}
+            
+            {% for transaction in recent_transactions %}
+            <li class="activity-item">
+                <div class="activity-icon update">
+                    <i class="fas fa-money-bill"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">
+                        Financial transaction: ${{ transaction.amount }} 
+                        <span class="badge-admin badge-info">{{ transaction.get_transaction_type_display }}</span>
+                    </div>
+                    <div class="activity-time">{{ transaction.transaction_date|timesince }} ago</div>
+                </div>
+            </li>
+            {% endfor %}
+            
+            {% if not recent_certificates and not recent_verifications and not recent_transactions %}
+            <li class="activity-item">
+                <div class="activity-icon update">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">No recent activity</div>
+                    <div class="activity-time">Start by creating a certificate or verifying one</div>
+                </div>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- System Status -->
+    <div class="system-status">
+        <h2>
+            <i class="fas fa-server"></i>
+            System Status
+        </h2>
+        <div class="status-grid">
+            <div class="status-item">
+                <div class="value">{{ valid_certificates }}</div>
+                <div class="label">Valid Certificates</div>
+            </div>
+            <div class="status-item">
+                <div class="value">{{ verified_certificates }}</div>
+                <div class="label">Verified Certificates</div>
+            </div>
+            <div class="status-item">
+                <div class="value">{{ monthly_stats.certificates_created }}</div>
+                <div class="label">Created This Month</div>
+            </div>
+            <div class="status-item">
+                <div class="value">{{ monthly_stats.verifications }}</div>
+                <div class="label">Verifications This Month</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="chart-container">
+        <h2>
+            <i class="fas fa-chart-line"></i>
+            Analytics Overview
+        </h2>
+        <div class="chart-content">
+            <div class="chart-placeholder">
+                <i class="fas fa-chart-bar"></i>
+                <h4>Analytics Dashboard</h4>
+                <p>Interactive charts and analytics will be displayed here</p>
+                <a href="{% url 'certificates:dashboard' %}" class="btn-admin">
+                    <i class="fas fa-chart-line me-2"></i>
+                    View Detailed Analytics
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-card .icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--info-color) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .stat-card .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card .label {
+        color: var(--secondary-color);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+
+    .stat-card .trend {
+        font-size: 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .trend.positive {
+        color: var(--success-color);
+    }
+
+    .trend.negative {
+        color: var(--danger-color);
+    }
+
+    .quick-actions {
+        background: white;
+        border-radius: 1.5rem;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .quick-actions h2 {
+        background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);
+        margin: 0;
+        padding: 1.5rem;
+        font-size: 1.1rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+
+    .action-item {
+        background: var(--light-color);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: var(--dark-color);
+        border: 1px solid var(--border-color);
+    }
+
+    .action-item:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        text-decoration: none;
+    }
+
+    .action-item .icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+
+    .action-item h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .action-item p {
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin: 0;
+    }
+
+    .recent-activity {
+        background: white;
+        border-radius: 1.5rem;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .recent-activity h2 {
+        background: linear-gradient(135deg, var(--warning-color) 0%, #b45309 100%);
+        margin: 0;
+        padding: 1.5rem;
+        font-size: 1.1rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .activity-list {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    .activity-item {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: background 0.2s ease;
+    }
+
+    .activity-item:hover {
+        background: var(--light-color);
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .activity-icon.create {
+        background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);
+    }
+
+    .activity-icon.update {
+        background: linear-gradient(135deg, var(--info-color) 0%, #0e7490 100%);
+    }
+
+    .activity-icon.delete {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #b91c1c 100%);
+    }
+
+    .activity-icon.verify {
+        background: linear-gradient(135deg, var(--warning-color) 0%, #b45309 100%);
+    }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-title {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .activity-time {
+        font-size: 0.875rem;
+        color: var(--secondary-color);
+    }
+
+    .system-status {
+        background: white;
+        border-radius: 1.5rem;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .system-status h2 {
+        background: linear-gradient(135deg, var(--info-color) 0%, #0e7490 100%);
+        margin: 0;
+        padding: 1.5rem;
+        font-size: 1.1rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+
+    .status-item {
+        text-align: center;
+        padding: 1rem;
+        background: var(--light-color);
+        border-radius: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .status-item .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .status-item .label {
+        font-size: 0.875rem;
+        color: var(--secondary-color);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+
+    .chart-container {
+        background: white;
+        border-radius: 1.5rem;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .chart-container h2 {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+        margin: 0;
+        padding: 1.5rem;
+        font-size: 1.1rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .chart-content {
+        padding: 2rem;
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .chart-placeholder {
+        text-align: center;
+        color: var(--secondary-color);
+    }
+
+    .chart-placeholder i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .status-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,108 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block dashboard_title %}Certificate Management - Dashboard{% endblock %}
+{% block page_title %}Certificate Management{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="display-6 fw-bold text-primary">Certificate Management</h2>
+                <p class="lead text-muted">Manage insurance certificates and policies</p>
+            </div>
+            <a href="{% url 'certificates:certificate_create' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Add Certificate
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="GET" class="d-flex">
+            <input type="text" name="q" value="{{ query }}" class="form-control form-control-lg me-2" 
+                   placeholder="Search certificates by client name...">
+            <button type="submit" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Certificates Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white">
+        <h3 class="mb-0"><i class="fas fa-certificate me-2"></i>Certificates ({{ certificates.count }})</h3>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Policy Number</th>
+                        <th>Client Name</th>
+                        <th>Type</th>
+                        <th>Coverage</th>
+                        <th>Status</th>
+                        <th>Premium</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for certificate in certificates %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ certificate.policy_number }}</div>
+                            <small class="text-muted">{{ certificate.issue_date|date:"M d, Y" }}</small>
+                        </td>
+                        <td>{{ certificate.client_name }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ certificate.get_certificate_type_display }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if certificate.coverage_level == 'comprehensive' %}success{% elif certificate.coverage_level == 'standard' %}warning{% else %}secondary{% endif %}">
+                                {{ certificate.get_coverage_level_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if certificate.status == 'active' %}success{% elif certificate.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                {{ certificate.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-success">${{ certificate.premium_amount|floatformat:2 }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'certificates:certificate_edit' certificate.pk %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'certificates:certificate_detail' certificate.policy_number %}" 
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'certificates:printable_certificate' certificate.policy_number %}" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-certificate fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No certificates found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

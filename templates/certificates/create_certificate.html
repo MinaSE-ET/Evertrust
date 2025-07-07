@@ -1,0 +1,743 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-certificate me-2"></i>{{ title }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Client Information Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-user me-2"></i>Client Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.client_name.id_for_label }}" class="form-label">
+                                    {{ form.client_name.label }}
+                                </label>
+                                {{ form.client_name }}
+                                {% if form.client_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_name.help_text %}
+                                    <div class="form-text">{{ form.client_name.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.client_email.id_for_label }}" class="form-label">
+                                    {{ form.client_email.label }}
+                                </label>
+                                {{ form.client_email }}
+                                {% if form.client_email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_email.help_text %}
+                                    <div class="form-text">{{ form.client_email.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.client_phone.id_for_label }}" class="form-label">
+                                    {{ form.client_phone.label }}
+                                </label>
+                                {{ form.client_phone }}
+                                {% if form.client_phone.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_phone.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_phone.help_text %}
+                                    <div class="form-text">{{ form.client_phone.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.client_id_number.id_for_label }}" class="form-label">
+                                    {{ form.client_id_number.label }}
+                                </label>
+                                {{ form.client_id_number }}
+                                {% if form.client_id_number.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_id_number.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_id_number.help_text %}
+                                    <div class="form-text">{{ form.client_id_number.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.client_date_of_birth.id_for_label }}" class="form-label">
+                                    {{ form.client_date_of_birth.label }}
+                                </label>
+                                {{ form.client_date_of_birth }}
+                                {% if form.client_date_of_birth.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_date_of_birth.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_date_of_birth.help_text %}
+                                    <div class="form-text">{{ form.client_date_of_birth.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.client_address.id_for_label }}" class="form-label">
+                                    {{ form.client_address.label }}
+                                </label>
+                                {{ form.client_address }}
+                                {% if form.client_address.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_address.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_address.help_text %}
+                                    <div class="form-text">{{ form.client_address.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.client_bank_name.id_for_label }}" class="form-label">
+                                    {{ form.client_bank_name.label }}
+                                </label>
+                                {{ form.client_bank_name }}
+                                {% if form.client_bank_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_bank_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_bank_name.help_text %}
+                                    <div class="form-text">{{ form.client_bank_name.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.client_bank_account.id_for_label }}" class="form-label">
+                                    {{ form.client_bank_account.label }}
+                                </label>
+                                {{ form.client_bank_account }}
+                                {% if form.client_bank_account.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.client_bank_account.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.client_bank_account.help_text %}
+                                    <div class="form-text">{{ form.client_bank_account.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Insurance Details Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-shield-alt me-2"></i>Insurance Details
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.certificate_type.id_for_label }}" class="form-label">
+                                    {{ form.certificate_type.label }}
+                                </label>
+                                {{ form.certificate_type }}
+                                {% if form.certificate_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.certificate_type.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.certificate_type.help_text %}
+                                    <div class="form-text">{{ form.certificate_type.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.coverage_level.id_for_label }}" class="form-label">
+                                    {{ form.coverage_level.label }}
+                                </label>
+                                {{ form.coverage_level }}
+                                {% if form.coverage_level.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.coverage_level.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.coverage_level.help_text %}
+                                    <div class="form-text">{{ form.coverage_level.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.insured_amount.id_for_label }}" class="form-label">
+                                    {{ form.insured_amount.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.insured_amount }}
+                                </div>
+                                {% if form.insured_amount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.insured_amount.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.insured_amount.help_text %}
+                                    <div class="form-text">{{ form.insured_amount.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.premium_amount.id_for_label }}" class="form-label">
+                                    {{ form.premium_amount.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.premium_amount }}
+                                </div>
+                                {% if form.premium_amount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.premium_amount.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.premium_amount.help_text %}
+                                    <div class="form-text">{{ form.premium_amount.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.deductible_amount.id_for_label }}" class="form-label">
+                                    {{ form.deductible_amount.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.deductible_amount }}
+                                </div>
+                                {% if form.deductible_amount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.deductible_amount.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.deductible_amount.help_text %}
+                                    <div class="form-text">{{ form.deductible_amount.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Liability and Contribution Details Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-shield-alt me-2"></i>Liability and Contribution Details
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.liability_per_person.id_for_label }}" class="form-label">
+                                    {{ form.liability_per_person.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.liability_per_person }}
+                                </div>
+                                {% if form.liability_per_person.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.liability_per_person.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.liability_per_person.help_text %}
+                                    <div class="form-text">{{ form.liability_per_person.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.liability_per_occurrence.id_for_label }}" class="form-label">
+                                    {{ form.liability_per_occurrence.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.liability_per_occurrence }}
+                                </div>
+                                {% if form.liability_per_occurrence.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.liability_per_occurrence.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.liability_per_occurrence.help_text %}
+                                    <div class="form-text">{{ form.liability_per_occurrence.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.liability_aggregate.id_for_label }}" class="form-label">
+                                    {{ form.liability_aggregate.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.liability_aggregate }}
+                                </div>
+                                {% if form.liability_aggregate.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.liability_aggregate.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.liability_aggregate.help_text %}
+                                    <div class="form-text">{{ form.liability_aggregate.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.net_contribution.id_for_label }}" class="form-label">
+                                    {{ form.net_contribution.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.net_contribution }}
+                                </div>
+                                {% if form.net_contribution.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.net_contribution.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.net_contribution.help_text %}
+                                    <div class="form-text">{{ form.net_contribution.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.proportional_stamp.id_for_label }}" class="form-label">
+                                    {{ form.proportional_stamp.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.proportional_stamp }}
+                                </div>
+                                {% if form.proportional_stamp.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.proportional_stamp.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.proportional_stamp.help_text %}
+                                    <div class="form-text">{{ form.proportional_stamp.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.dimensional_stamp.id_for_label }}" class="form-label">
+                                    {{ form.dimensional_stamp.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.dimensional_stamp }}
+                                </div>
+                                {% if form.dimensional_stamp.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.dimensional_stamp.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.dimensional_stamp.help_text %}
+                                    <div class="form-text">{{ form.dimensional_stamp.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.supervision_fees.id_for_label }}" class="form-label">
+                                    {{ form.supervision_fees.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.supervision_fees }}
+                                </div>
+                                {% if form.supervision_fees.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.supervision_fees.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.supervision_fees.help_text %}
+                                    <div class="form-text">{{ form.supervision_fees.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.insurance_fees.id_for_label }}" class="form-label">
+                                    {{ form.insurance_fees.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.insurance_fees }}
+                                </div>
+                                {% if form.insurance_fees.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.insurance_fees.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.insurance_fees.help_text %}
+                                    <div class="form-text">{{ form.insurance_fees.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.total_premium_words.id_for_label }}" class="form-label">
+                                    {{ form.total_premium_words.label }}
+                                </label>
+                                {{ form.total_premium_words }}
+                                {% if form.total_premium_words.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.total_premium_words.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.total_premium_words.help_text %}
+                                    <div class="form-text">{{ form.total_premium_words.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Coverage Period Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-calendar-alt me-2"></i>Coverage Period
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                    {{ form.start_date.label }}
+                                </label>
+                                {{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.start_date.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.start_date.help_text %}
+                                    <div class="form-text">{{ form.start_date.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                    {{ form.end_date.label }}
+                                </label>
+                                {{ form.end_date }}
+                                {% if form.end_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.end_date.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.end_date.help_text %}
+                                    <div class="form-text">{{ form.end_date.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.period_from.id_for_label }}" class="form-label">
+                                    {{ form.period_from.label }}
+                                </label>
+                                {{ form.period_from }}
+                                {% if form.period_from.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.period_from.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.period_from.help_text %}
+                                    <div class="form-text">{{ form.period_from.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.period_to.id_for_label }}" class="form-label">
+                                    {{ form.period_to.label }}
+                                </label>
+                                {{ form.period_to }}
+                                {% if form.period_to.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.period_to.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.period_to.help_text %}
+                                    <div class="form-text">{{ form.period_to.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Activity and Location Information Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Activity and Location Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.location.id_for_label }}" class="form-label">
+                                    {{ form.location.label }}
+                                </label>
+                                {{ form.location }}
+                                {% if form.location.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.location.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.location.help_text %}
+                                    <div class="form-text">{{ form.location.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.activity.id_for_label }}" class="form-label">
+                                    {{ form.activity.label }}
+                                </label>
+                                {{ form.activity }}
+                                {% if form.activity.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.activity.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.activity.help_text %}
+                                    <div class="form-text">{{ form.activity.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.description_of_risk.id_for_label }}" class="form-label">
+                                    {{ form.description_of_risk.label }}
+                                </label>
+                                {{ form.description_of_risk }}
+                                {% if form.description_of_risk.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description_of_risk.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.description_of_risk.help_text %}
+                                    <div class="form-text">{{ form.description_of_risk.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Status Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-info-circle me-2"></i>Status Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    {{ form.status.label }}
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.status.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.status.help_text %}
+                                    <div class="form-text">{{ form.status.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.payment_status.id_for_label }}" class="form-label">
+                                    {{ form.payment_status.label }}
+                                </label>
+                                {{ form.payment_status }}
+                                {% if form.payment_status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.payment_status.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.payment_status.help_text %}
+                                    <div class="form-text">{{ form.payment_status.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Agent Information Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-user-tie me-2"></i>Agent Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.agent_name.id_for_label }}" class="form-label">
+                                    {{ form.agent_name.label }}
+                                </label>
+                                {{ form.agent_name }}
+                                {% if form.agent_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.agent_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.agent_name.help_text %}
+                                    <div class="form-text">{{ form.agent_name.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.agent_id.id_for_label }}" class="form-label">
+                                    {{ form.agent_id.label }}
+                                </label>
+                                {{ form.agent_id }}
+                                {% if form.agent_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.agent_id.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.agent_id.help_text %}
+                                    <div class="form-text">{{ form.agent_id.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary border-bottom pb-2">
+                                    <i class="fas fa-file-alt me-2"></i>Additional Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    {{ form.description.label }}
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.description.help_text %}
+                                    <div class="form-text">{{ form.description.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.terms_conditions.id_for_label }}" class="form-label">
+                                    {{ form.terms_conditions.label }}
+                                </label>
+                                {{ form.terms_conditions }}
+                                {% if form.terms_conditions.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.terms_conditions.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.terms_conditions.help_text %}
+                                    <div class="form-text">{{ form.terms_conditions.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.special_conditions.id_for_label }}" class="form-label">
+                                    {{ form.special_conditions.label }}
+                                </label>
+                                {{ form.special_conditions }}
+                                {% if form.special_conditions.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.special_conditions.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if form.special_conditions.help_text %}
+                                    <div class="form-text">{{ form.special_conditions.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'certificates:certificate_list' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                                    </a>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Save Certificate
+                                        </button>
+                                        {% if certificate %}
+                                        <a href="{% url 'certificates:certificate_detail' certificate.policy_number %}" class="btn btn-outline-primary">
+                                            <i class="fas fa-eye me-2"></i>View Certificate
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.input-group-text {
+    background-color: #f8fafc;
+    border-color: #d1d5db;
+    color: #6b7280;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.text-primary {
+    color: #1e3a8a !important;
+}
+
+.border-bottom {
+    border-bottom: 2px solid #e5e7eb !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.btn-outline-primary:hover {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+</style>
+{% endblock %} 

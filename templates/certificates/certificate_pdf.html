@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate PDF - {{ certificate.policy_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Times New Roman', serif;
+            color: #333;
+            line-height: 1.6;
+            background: url('{% static "images/EverTrust_Travel_Insurance_Template.jpg" %}') no-repeat center center;
+            background-size: cover;
+            min-height: 100vh;
+        }
+        
+        .pdf-container {
+            position: relative;
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .pdf-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1;
+        }
+        
+        .pdf-content {
+            position: relative;
+            z-index: 2;
+            padding: 40px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .pdf-logo {
+            max-height: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .pdf-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .pdf-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        /* Certificate Info */
+        .certificate-info {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 2px solid #1e3a8a;
+        }
+        
+        .policy-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .issue-date {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            flex: 1;
+        }
+        
+        .info-section {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin: 0 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 5px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: #374151;
+            min-width: 120px;
+        }
+        
+        .value {
+            font-weight: 500;
+            color: #111827;
+            text-align: right;
+        }
+        
+        .amount {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #059669;
+        }
+        
+        /* Signature and Seal */
+        .signature-seal-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+        }
+        
+        .signature-section {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .signature-img {
+            max-width: 150px;
+            max-height: 60px;
+            display: block;
+            margin: 0 auto 10px;
+        }
+        
+        .sig-line {
+            width: 150px;
+            height: 2px;
+            background: #333;
+            margin: 10px auto;
+        }
+        
+        .sig-label {
+            font-weight: bold;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        
+        .seal-section {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .seal-img {
+            max-width: 100px;
+            max-height: 100px;
+            display: block;
+            margin: 0 auto 10px;
+        }
+        
+        .seal-label {
+            font-weight: bold;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        
+        /* QR Code */
+        .qr-section {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .qr-img {
+            width: 60px;
+            height: 60px;
+            display: block;
+            margin: 0 auto 5px;
+        }
+        
+        .qr-text {
+            font-size: 0.7rem;
+            color: #666;
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        /* Debit Note */
+        .debit-note {
+            page-break-before: always;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border: 2px solid #1e3a8a;
+            border-radius: 8px;
+            margin: 20px;
+        }
+        
+        .debit-note-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #1e3a8a;
+        }
+        
+        .debit-note-logo {
+            max-height: 40px;
+            margin-right: 20px;
+        }
+        
+        .debit-note-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .debit-note-table {
+            width: 100%;
+            margin-bottom: 30px;
+            border-collapse: collapse;
+        }
+        
+        .debit-note-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .debit-note-table .label {
+            font-weight: bold;
+            color: #374151;
+            width: 40%;
+        }
+        
+        .debit-note-table .value {
+            color: #111827;
+            text-align: left;
+        }
+        
+        .debit-note-amount {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 2px solid #1e3a8a;
+        }
+        
+        .amount-label {
+            font-weight: bold;
+            color: #374151;
+            font-size: 1.1rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .amount-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e3a8a;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .debit-note-details {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #1e3a8a;
+        }
+        
+        .debit-note-details strong {
+            color: #1e3a8a;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .debit-note-details p {
+            margin: 0;
+            line-height: 1.6;
+            color: #374151;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: none !important;
+            }
+            
+            .pdf-container {
+                box-shadow: none !important;
+                background: none !important;
+            }
+            
+            .pdf-overlay {
+                background: rgba(255, 255, 255, 0.85) !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="pdf-container">
+        <div class="pdf-overlay"></div>
+        <div class="pdf-content">
+            <!-- QR Code -->
+            <div class="qr-section">
+                <img src="{% url 'certificates:certificate_qr' certificate.policy_number %}" alt="QR Code" class="qr-img">
+                <div class="qr-text">Scan to verify</div>
+            </div>
+            
+            <!-- Header -->
+            <div class="pdf-header">
+                <img src="{% static 'images/Evertrust-logo.png' %}" alt="EverTrust Logo" class="pdf-logo">
+                <h1 class="pdf-title">INSURANCE CERTIFICATE</h1>
+                <p class="pdf-subtitle">Professional Travel Insurance Management</p>
+            </div>
+            
+            <!-- Certificate Info -->
+            <div class="certificate-info">
+                <div class="policy-number">Policy Number: {{ certificate.policy_number }}</div>
+                <div class="issue-date">Issue Date: {{ certificate.issue_date|date:"F d, Y" }}</div>
+            </div>
+            
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Client Information -->
+                <div class="info-section">
+                    <h3 class="section-title">INSURED PERSON</h3>
+                    <div class="info-row">
+                        <span class="label">Full Name:</span>
+                        <span class="value">{{ certificate.client_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">ID Number:</span>
+                        <span class="value">{{ certificate.client_id_number }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Date of Birth:</span>
+                        <span class="value">{{ certificate.client_date_of_birth }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Phone:</span>
+                        <span class="value">{{ certificate.client_phone }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Email:</span>
+                        <span class="value">{{ certificate.client_email }}</span>
+                    </div>
+                    {% if certificate.client_bank_name %}
+                    <div class="info-row">
+                        <span class="label">Bank Name:</span>
+                        <span class="value">{{ certificate.client_bank_name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if certificate.client_bank_account %}
+                    <div class="info-row">
+                        <span class="label">Bank Account:</span>
+                        <span class="value">{{ certificate.client_bank_account }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Insurance Details -->
+                <div class="info-section">
+                    <h3 class="section-title">INSURANCE DETAILS</h3>
+                    <div class="info-row">
+                        <span class="label">Insurance Type:</span>
+                        <span class="value">{{ certificate.get_certificate_type_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Coverage Level:</span>
+                        <span class="value">{{ certificate.get_coverage_level_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Insured Amount:</span>
+                        <span class="value amount">${{ certificate.insured_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Premium Amount:</span>
+                        <span class="value amount">${{ certificate.premium_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Total Premium:</span>
+                        <span class="value amount">${{ certificate.total_premium|floatformat:2 }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Deductible:</span>
+                        <span class="value amount">${{ certificate.deductible_amount|floatformat:2 }}</span>
+                    </div>
+
+                </div>
+                
+                <!-- Insurance Period -->
+                <div class="info-section">
+                    <h3 class="section-title">INSURANCE PERIOD</h3>
+                    <div class="info-row">
+                        <span class="label">Start Date:</span>
+                        <span class="value">{{ certificate.start_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">End Date:</span>
+                        <span class="value">{{ certificate.end_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Days Remaining:</span>
+                        <span class="value {% if certificate.days_remaining > 0 %}valid{% else %}expired{% endif %}">
+                            {% if certificate.days_remaining > 0 %}
+                                {{ certificate.days_remaining }} days
+                            {% else %}
+                                Expired
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Status:</span>
+                        <span class="value">{{ certificate.get_status_display }}</span>
+                    </div>
+                </div>
+                
+                <!-- Financial Information -->
+                <div class="info-section">
+                    <h3 class="section-title">FINANCIAL INFORMATION</h3>
+                    <div class="info-row">
+                        <span class="label">Total Paid:</span>
+                        <span class="value amount">${{ certificate.total_paid_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Remaining Amount:</span>
+                        <span class="value amount">${{ certificate.remaining_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Payment Status:</span>
+                        <span class="value">{{ certificate.get_payment_status_display }}</span>
+                    </div>
+                    {% if certificate.agent_name or certificate.agent_id %}
+                    <div class="info-row">
+                        <span class="label">Agent Name:</span>
+                        <span class="value">{{ certificate.agent_name|default:"N/A" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Signature and Seal -->
+            <div class="signature-seal-section">
+                <div class="signature-section">
+                    <img src="{% static 'images/signature.png' %}" alt="Signature" class="signature-img">
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Authorized Signature</div>
+                </div>
+                <div class="seal-section">
+                    <img src="{% static 'images/seal evertrust.png' %}" alt="Official Seal" class="seal-img">
+                    <div class="seal-label">Official Seal</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Debit Note -->
+    <div class="debit-note">
+        <div class="debit-note-header">
+            <img src="{% static 'images/Evertrust-logo.png' %}" alt="EverTrust Logo" class="debit-note-logo">
+            <div class="debit-note-title">Debit Note</div>
+        </div>
+        <table class="debit-note-table">
+            <tr><td class="label">Policy Number</td><td class="value">{{ certificate.policy_number }}</td></tr>
+            <tr><td class="label">Client Name</td><td class="value">{{ certificate.client_name }}</td></tr>
+            <tr><td class="label">Issue Date</td><td class="value">{{ certificate.issue_date|date:'F d, Y' }}</td></tr>
+        </table>
+        <div class="debit-note-amount">
+            <span class="amount-label">Amount Due:</span>
+            <span class="amount-value">${{ certificate.total_premium|floatformat:2 }}</span>
+        </div>
+        <div class="debit-note-details">
+            <strong>Details:</strong>
+            <p>This debit note is issued for the above policy. Please settle the amount due at your earliest convenience. For any inquiries, contact our support team.</p>
+        </div>
+    </div>
+</body>
+</html> 

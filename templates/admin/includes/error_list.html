@@ -1,0 +1,11 @@
+{% if errors %}
+<div class="alert alert-danger" style="font-size:1.2em; font-weight:bold; border:2px solid #dc3545; background:#fff3f3; color:#b30000; padding:1em; margin-bottom:2em;">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <span style="font-size:1.1em;">There were problems with your submission. Please review the highlighted fields below and correct the errors.</span>
+</div>
+<ul class="errorlist">
+{% for error in errors %}
+    <li>{{ error }}</li>
+{% endfor %}
+</ul>
+{% endif %} 
