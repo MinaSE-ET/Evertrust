@@ -1,0 +1,42 @@
+RewriteEngine On
+
+# Handle static files
+RewriteCond %{REQUEST_URI} !^/static/
+RewriteCond %{REQUEST_URI} !^/media/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^(.*)$ /passenger_wsgi.py/$1 [QSA,L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Prevent access to sensitive files
+<FilesMatch "^(?!passenger_wsgi\.py$).*\.py$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(pyc|env)$">
+    Require all denied
+</FilesMatch>
+
+<Files "db.sqlite3">
+    Require all denied
+</Files>
+
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/evertrust/public_html/app.evertrust.uk"
+PassengerBaseURI "/"
+PassengerPython "/home/evertrust/virtualenv/public_html/app.evertrust.uk/3.13/bin/python"
+PassengerAppLogFile "/home/evertrust/logs/passenger.log"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php82” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php82 .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit
