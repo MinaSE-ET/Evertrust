@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Count, Sum, Q
+from django.core.paginator import Paginator
 from datetime import timedelta
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
@@ -19,9 +20,9 @@ from io import BytesIO
 import json
 import re
 import os
-from .models import Certificate, CertificateVerification, FinancialTransaction
+from .models import Certificate, CertificateVerification, FinancialTransaction, Payment, Claim, Commission, Fee, FinancialReport
 from .utils import generate_certificate_pdf, generate_certificate_from_template
-from .forms import CertificateForm, CertificateSearchForm, CertificateVerificationForm, PaymentForm, InstallmentForm, InvoiceForm
+from .forms import CertificateForm, CertificateSearchForm, CertificateVerificationForm, PaymentForm, InstallmentForm, InvoiceForm, ClaimForm, CommissionForm, FeeForm, FinancialReportForm, ClaimSearchForm, CommissionSearchForm, FeeSearchForm, FinancialTransactionSearchForm, FinancialTransactionForm
 from .admin import get_admin_dashboard_context
 import uuid
 import qrcode
@@ -349,8 +350,8 @@ def get_recent_actions():
         actions.append({
             'type': 'certificate_created',
             'timestamp': cert.issue_date,
-            'content': f'Certificate {cert.certificate_id} was created for {cert.client_name}',
-            'url': f'/admin/certificates/certificate/{cert.certificate_id}/change/'
+            'content': f'Certificate {cert.policy_number} was created for {cert.client_name}',
+            'url': f'/admin/certificates/certificate/{cert.policy_number}/change/'
         })
     
     for verif in recent_verifications:
@@ -530,20 +531,232 @@ def financial_dashboard(request):
     if not request.user.is_staff:
         return redirect('admin:login')
     
-    # Get financial data
-    transactions = FinancialTransaction.objects.all().order_by('-created_at')[:50]
-    total_premium = FinancialTransaction.objects.filter(transaction_type='premium').aggregate(
-        total=Sum('amount')
-    )['total'] or 0
-    total_claims = FinancialTransaction.objects.filter(transaction_type='claim').aggregate(
-        total=Sum('amount')
+    from datetime import datetime, timedelta
+    from django.db.models import Sum, Count, Q
+    
+    # Get date range from request or default to last 30 days
+    days = int(request.GET.get('days', 30))
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    
+    # Get all certificates with financial data
+    certificates = Certificate.objects.all().order_by('-issue_date')
+    
+    # Calculate financial metrics
+    total_premiums = certificates.aggregate(
+        total=Sum('premium_amount')
     )['total'] or 0
     
+    total_paid = certificates.filter(
+        payment_status='paid'
+    ).aggregate(
+        total=Sum('premium_amount')
+    )['total'] or 0
+    
+    outstanding = certificates.exclude(
+        payment_status='paid'
+    ).aggregate(
+        total=Sum('premium_amount')
+    )['total'] or 0
+    
+    overdue = certificates.filter(
+        payment_status='overdue'
+    ).aggregate(
+        total=Sum('premium_amount')
+    )['total'] or 0
+    
+    # Get certificates with payment details
+    certificates_with_financials = []
+    for cert in certificates:
+        # Calculate paid amount (sum of all payments)
+        paid_amount = cert.payments.filter(status='completed').aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+        
+        # Calculate remaining amount
+        remaining_amount = cert.premium_amount - paid_amount
+        
+        # Determine payment status
+        if remaining_amount <= 0:
+            payment_status = 'paid'
+        elif cert.payment_status == 'overdue':
+            payment_status = 'overdue'
+        elif cert.payment_status == 'installment':
+            payment_status = 'installment'
+        else:
+            payment_status = 'pending'
+        
+        certificates_with_financials.append({
+            'certificate': cert,
+            'total_paid_amount': paid_amount,
+            'remaining_amount': remaining_amount,
+            'payment_status': payment_status,
+        })
+    
+    # Financial transaction data
+    transactions = FinancialTransaction.objects.all().order_by('-transaction_date')[:50]
+    
+    # Claims data - Calculate totals first, then slice for display
+    all_claims = Claim.objects.all()
+    total_claims_amount = all_claims.aggregate(total=Sum('claimed_amount'))['total'] or 0
+    total_claims_paid = all_claims.aggregate(total=Sum('paid_amount'))['total'] or 0
+    total_claims_approved = all_claims.aggregate(total=Sum('approved_amount'))['total'] or 0
+    claims = all_claims.order_by('-filed_date')[:20]
+    
+    # Commissions data - Calculate totals first, then slice for display
+    all_commissions = Commission.objects.all()
+    total_commissions_amount = all_commissions.aggregate(total=Sum('commission_amount'))['total'] or 0
+    total_commissions_paid = all_commissions.aggregate(total=Sum('paid_amount'))['total'] or 0
+    total_commissions_pending = all_commissions.filter(status='pending').aggregate(total=Sum('commission_amount'))['total'] or 0
+    commissions = all_commissions.order_by('-earned_date')[:20]
+    
+    # Fees data - Calculate totals first, then slice for display
+    all_fees = Fee.objects.all()
+    total_fees_amount = all_fees.aggregate(total=Sum('fee_amount'))['total'] or 0
+    total_fees_paid = all_fees.aggregate(total=Sum('paid_amount'))['total'] or 0
+    total_fees_overdue = all_fees.filter(status__in=['pending', 'charged']).filter(due_date__lt=timezone.now().date()).count()
+    fees = all_fees.order_by('-charged_date')[:20]
+    
+    # Financial reports data
+    reports = FinancialReport.objects.all().order_by('-created_date')[:10]
+    
+    # Monthly revenue data for charts
+    monthly_revenue = FinancialTransaction.objects.filter(
+        transaction_type='premium_payment',
+        transaction_date__range=[start_date, end_date]
+    ).extra(
+        select={'month': "strftime('%%Y-%%m', transaction_date)"}
+    ).values('month').annotate(
+        total=Sum('amount')
+    ).order_by('month')
+    
+    # Payment status breakdown
+    payment_status_breakdown = certificates.values('payment_status').annotate(
+        count=Count('policy_number'),
+        total_amount=Sum('premium_amount')
+    )
+    
+    # Certificate type breakdown
+    certificate_type_breakdown = certificates.values('certificate_type').annotate(
+        count=Count('policy_number'),
+        total_premium=Sum('premium_amount')
+    )
+    
+    # Claims breakdown
+    claims_breakdown = all_claims.values('claim_type').annotate(
+        count=Count('id'),
+        total_claimed=Sum('claimed_amount'),
+        total_approved=Sum('approved_amount'),
+        total_paid=Sum('paid_amount')
+    )
+    
+    # Commissions breakdown
+    commissions_breakdown = all_commissions.values('commission_type').annotate(
+        count=Count('id'),
+        total_amount=Sum('commission_amount'),
+        total_paid=Sum('paid_amount')
+    )
+    
+    # Fees breakdown
+    fees_breakdown = all_fees.values('fee_type').annotate(
+        count=Count('id'),
+        total_amount=Sum('fee_amount'),
+        total_paid=Sum('paid_amount')
+    )
+    
+    # Recent financial activities
+    recent_activities = []
+    
+    # Add recent payments
+    recent_payments = Payment.objects.filter(
+        status='completed'
+    ).order_by('-payment_date')[:10]
+    for payment in recent_payments:
+        recent_activities.append({
+            'type': 'payment',
+            'date': payment.payment_date,
+            'amount': payment.amount,
+            'description': f'Payment for {payment.certificate.policy_number}',
+            'status': 'completed'
+        })
+    
+    # Add recent transactions
+    recent_transactions = FinancialTransaction.objects.filter(
+        status='completed'
+    ).order_by('-transaction_date')[:10]
+    for transaction in recent_transactions:
+        recent_activities.append({
+            'type': 'transaction',
+            'date': transaction.transaction_date,
+            'amount': transaction.amount,
+            'description': f'{transaction.get_transaction_type_display()} - {transaction.certificate.policy_number}',
+            'status': transaction.status
+        })
+    
+    # Add recent claims
+    recent_claims = Claim.objects.filter(
+        filed_date__range=[start_date, end_date]
+    ).order_by('-filed_date')[:10]
+    for claim in recent_claims:
+        recent_activities.append({
+            'type': 'claim',
+            'date': claim.filed_date,
+            'amount': -claim.claimed_amount,  # Negative for claims
+            'description': f'Claim {claim.claim_number} - {claim.claimant_name}',
+            'status': claim.status
+        })
+    
+    # Add recent commissions
+    recent_commissions = Commission.objects.filter(
+        earned_date__range=[start_date, end_date]
+    ).order_by('-earned_date')[:10]
+    for commission in recent_commissions:
+        recent_activities.append({
+            'type': 'commission',
+            'date': commission.earned_date,
+            'amount': -commission.commission_amount,  # Negative for commissions
+            'description': f'Commission {commission.commission_number} - {commission.recipient_name}',
+            'status': commission.status
+        })
+    
+    # Sort activities by date
+    recent_activities.sort(key=lambda x: x['date'], reverse=True)
+    recent_activities = recent_activities[:20]
+    
+    # Calculate net revenue
+    net_revenue = total_paid - total_claims_paid - total_commissions_paid - total_fees_paid
+    
     context = {
+        'certificates': certificates_with_financials,
+        'total_premiums': total_premiums,
+        'total_paid': total_paid,
+        'outstanding': outstanding,
+        'overdue': overdue,
         'transactions': transactions,
-        'total_premium': total_premium,
-        'total_claims': total_claims,
-        'net_revenue': total_premium - total_claims,
+        'claims': claims,
+        'total_claims_amount': total_claims_amount,
+        'total_claims_paid': total_claims_paid,
+        'total_claims_approved': total_claims_approved,
+        'commissions': commissions,
+        'total_commissions_amount': total_commissions_amount,
+        'total_commissions_paid': total_commissions_paid,
+        'total_commissions_pending': total_commissions_pending,
+        'fees': fees,
+        'total_fees_amount': total_fees_amount,
+        'total_fees_paid': total_fees_paid,
+        'total_fees_overdue': total_fees_overdue,
+        'reports': reports,
+        'monthly_revenue': monthly_revenue,
+        'payment_status_breakdown': payment_status_breakdown,
+        'certificate_type_breakdown': certificate_type_breakdown,
+        'claims_breakdown': claims_breakdown,
+        'commissions_breakdown': commissions_breakdown,
+        'fees_breakdown': fees_breakdown,
+        'recent_activities': recent_activities,
+        'net_revenue': net_revenue,
+        'start_date': start_date,
+        'end_date': end_date,
+        'days': days,
     }
     
     return render(request, 'certificates/financial_dashboard.html', context)
@@ -679,7 +892,7 @@ def dashboard_user_toggle_status(request, user_id):
     messages.success(request, f'User {user.username} {status} successfully.')
     return redirect('certificates:dashboard_users')
 
-@staff_required
+@staff_member_required
 def dashboard_financials(request):
     """Financial analysis dashboard view"""
     from datetime import datetime, timedelta
@@ -731,7 +944,7 @@ def dashboard_financials(request):
         select={'month': "strftime('%%Y-%%m', transaction_date)"}
     ).values('month', 'transaction_type').annotate(
         total=Sum('amount'),
-        count=Count('id')
+        count=Count('transaction_number')
     ).order_by('month')
     
     context = {
@@ -750,7 +963,7 @@ def dashboard_financials(request):
     
     return render(request, 'dashboard/financials.html', context)
 
-@staff_required
+@staff_member_required
 def dashboard_financial_export(request):
     """Export financial data"""
     format_type = request.GET.get('format', 'csv')
@@ -1122,5 +1335,588 @@ def certificate_pdf_professional(request, policy_number):
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="certificate_{policy_number}.pdf"'
     return response
+
+@staff_member_required
+def manage_payment(request, policy_number):
+    """Manage payment for a specific certificate"""
+    certificate = get_object_or_404(Certificate, policy_number=policy_number)
+    
+    if request.method == 'POST':
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.certificate = certificate
+            payment.payment_number = f"PAY{uuid.uuid4().hex[:8].upper()}"
+            payment.status = 'completed'
+            payment.processed_date = timezone.now()
+            payment.processed_by = request.user
+            payment.ip_address = request.META.get('REMOTE_ADDR', '')
+            payment.save()
+            
+            # Update certificate payment status if fully paid
+            total_paid = certificate.payments.filter(status='completed').aggregate(
+                total=Sum('amount')
+            )['total'] or 0
+            
+            if total_paid >= certificate.premium_amount:
+                certificate.payment_status = 'paid'
+                certificate.save()
+            
+            messages.success(request, f'Payment of ${payment.amount} recorded successfully for {certificate.policy_number}')
+            return redirect('certificates:financial_dashboard')
+    else:
+        form = PaymentForm(initial={'amount': certificate.premium_amount})
+    
+    # Get payment history
+    payments = certificate.payments.all().order_by('-payment_date')
+    total_paid = payments.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0
+    remaining = certificate.premium_amount - total_paid
+    
+    return render(request, 'certificates/manage_payment.html', {
+        'certificate': certificate,
+        'form': form,
+        'payments': payments,
+        'total_paid': total_paid,
+        'remaining': remaining,
+    })
+
+@staff_member_required
+def payment_history(request, policy_number):
+    """View payment history for a certificate"""
+    certificate = get_object_or_404(Certificate, policy_number=policy_number)
+    payments = certificate.payments.all().order_by('-payment_date')
+    
+    # Calculate payment statistics
+    total_paid = payments.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0
+    total_pending = payments.filter(status='pending').aggregate(total=Sum('amount'))['total'] or 0
+    total_failed = payments.filter(status='failed').aggregate(total=Sum('amount'))['total'] or 0
+    
+    return render(request, 'certificates/payment_history.html', {
+        'certificate': certificate,
+        'payments': payments,
+        'total_paid': total_paid,
+        'total_pending': total_pending,
+        'total_failed': total_failed,
+    })
+
+@staff_member_required
+def mark_as_paid(request, policy_number):
+    """Quick action to mark a certificate as paid"""
+    certificate = get_object_or_404(Certificate, policy_number=policy_number)
+    
+    if request.method == 'POST':
+        # Create a payment record for the full amount
+        payment = Payment.objects.create(
+            certificate=certificate,
+            payment_number=f"PAY{uuid.uuid4().hex[:8].upper()}",
+            amount=certificate.premium_amount,
+            payment_method='cash',  # Default method
+            status='completed',
+            due_date=timezone.now().date(),
+            processed_date=timezone.now(),
+            processed_by=request.user,
+            ip_address=request.META.get('REMOTE_ADDR', ''),
+            description=f'Full payment marked as completed by {request.user.get_full_name() or request.user.username}'
+        )
+        
+        # Update certificate status
+        certificate.payment_status = 'paid'
+        certificate.save()
+        
+        messages.success(request, f'Certificate {certificate.policy_number} marked as paid successfully!')
+        return redirect('certificates:financial_dashboard')
+    
+    return render(request, 'certificates/mark_as_paid.html', {
+        'certificate': certificate
+    })
+
+@staff_member_required
+def mark_as_overdue(request, policy_number):
+    """Quick action to mark a certificate as overdue"""
+    certificate = get_object_or_404(Certificate, policy_number=policy_number)
+    
+    if request.method == 'POST':
+        certificate.payment_status = 'overdue'
+        certificate.save()
+        
+        messages.warning(request, f'Certificate {certificate.policy_number} marked as overdue!')
+        return redirect('certificates:financial_dashboard')
+    
+    return render(request, 'certificates/mark_as_overdue.html', {
+        'certificate': certificate
+    })
+
+@staff_member_required
+def claim_list(request):
+    """List all claims with search and filtering"""
+    claims = Claim.objects.all().order_by('-filed_date')
+    
+    if request.method == 'GET':
+        form = ClaimSearchForm(request.GET)
+        if form.is_valid():
+            search = form.cleaned_data.get('search')
+            claim_type = form.cleaned_data.get('claim_type')
+            status = form.cleaned_data.get('status')
+            date_from = form.cleaned_data.get('date_from')
+            date_to = form.cleaned_data.get('date_to')
+            
+            if search:
+                claims = claims.filter(
+                    Q(claim_number__icontains=search) |
+                    Q(claimant_name__icontains=search) |
+                    Q(claimant_email__icontains=search) |
+                    Q(description__icontains=search)
+                )
+            
+            if claim_type:
+                claims = claims.filter(claim_type=claim_type)
+            
+            if status:
+                claims = claims.filter(status=status)
+            
+            if date_from:
+                claims = claims.filter(filed_date__gte=date_from)
+            
+            if date_to:
+                claims = claims.filter(filed_date__lte=date_to)
+    else:
+        form = ClaimSearchForm()
+    
+    # Calculate summary statistics
+    total_claims = claims.count()
+    total_claimed = claims.aggregate(total=Sum('claimed_amount'))['total'] or 0
+    total_approved = claims.aggregate(total=Sum('approved_amount'))['total'] or 0
+    total_paid = claims.aggregate(total=Sum('paid_amount'))['total'] or 0
+    
+    return render(request, 'certificates/claim_list.html', {
+        'claims': claims,
+        'form': form,
+        'total_claims': total_claims,
+        'total_claimed': total_claimed,
+        'total_approved': total_approved,
+        'total_paid': total_paid,
+    })
+
+@staff_member_required
+def claim_detail(request, claim_id):
+    """View claim details"""
+    claim = get_object_or_404(Claim, id=claim_id)
+    return render(request, 'certificates/claim_detail.html', {
+        'claim': claim
+    })
+
+@staff_member_required
+def claim_create(request):
+    """Create new claim"""
+    if request.method == 'POST':
+        form = ClaimForm(request.POST)
+        if form.is_valid():
+            claim = form.save(commit=False)
+            claim.save()
+            messages.success(request, f'Claim {claim.claim_number} created successfully!')
+            return redirect('certificates:claim_detail', claim_id=claim.id)
+    else:
+        form = ClaimForm()
+    
+    return render(request, 'certificates/claim_form.html', {
+        'form': form,
+        'title': 'Create New Claim'
+    })
+
+@staff_member_required
+def claim_edit(request, claim_id):
+    """Edit claim"""
+    claim = get_object_or_404(Claim, id=claim_id)
+    
+    if request.method == 'POST':
+        form = ClaimForm(request.POST, instance=claim)
+        if form.is_valid():
+            claim = form.save()
+            messages.success(request, f'Claim {claim.claim_number} updated successfully!')
+            return redirect('certificates:claim_detail', claim_id=claim.id)
+    else:
+        form = ClaimForm(instance=claim)
+    
+    return render(request, 'certificates/claim_form.html', {
+        'form': form,
+        'claim': claim,
+        'title': 'Edit Claim'
+    })
+
+@staff_member_required
+def commission_list(request):
+    """List all commissions with search and filtering"""
+    commissions = Commission.objects.all().order_by('-earned_date')
+    
+    if request.method == 'GET':
+        form = CommissionSearchForm(request.GET)
+        if form.is_valid():
+            search = form.cleaned_data.get('search')
+            commission_type = form.cleaned_data.get('commission_type')
+            status = form.cleaned_data.get('status')
+            date_from = form.cleaned_data.get('date_from')
+            date_to = form.cleaned_data.get('date_to')
+            
+            if search:
+                commissions = commissions.filter(
+                    Q(commission_number__icontains=search) |
+                    Q(recipient_name__icontains=search) |
+                    Q(recipient_id__icontains=search)
+                )
+            
+            if commission_type:
+                commissions = commissions.filter(commission_type=commission_type)
+            
+            if status:
+                commissions = commissions.filter(status=status)
+            
+            if date_from:
+                commissions = commissions.filter(earned_date__gte=date_from)
+            
+            if date_to:
+                commissions = commissions.filter(earned_date__lte=date_to)
+    else:
+        form = CommissionSearchForm()
+    
+    # Calculate summary statistics
+    total_commissions = commissions.count()
+    total_amount = commissions.aggregate(total=Sum('commission_amount'))['total'] or 0
+    total_paid = commissions.aggregate(total=Sum('paid_amount'))['total'] or 0
+    total_pending = commissions.filter(status='pending').aggregate(total=Sum('commission_amount'))['total'] or 0
+    
+    return render(request, 'certificates/commission_list.html', {
+        'commissions': commissions,
+        'form': form,
+        'total_commissions': total_commissions,
+        'total_amount': total_amount,
+        'total_paid': total_paid,
+        'total_pending': total_pending,
+    })
+
+@staff_member_required
+def commission_detail(request, commission_id):
+    """View commission details"""
+    commission = get_object_or_404(Commission, id=commission_id)
+    return render(request, 'certificates/commission_detail.html', {
+        'commission': commission
+    })
+
+@staff_member_required
+def commission_create(request):
+    """Create new commission"""
+    if request.method == 'POST':
+        form = CommissionForm(request.POST)
+        if form.is_valid():
+            commission = form.save(commit=False)
+            commission.save()
+            messages.success(request, f'Commission {commission.commission_number} created successfully!')
+            return redirect('certificates:commission_detail', commission_id=commission.id)
+    else:
+        form = CommissionForm()
+    
+    return render(request, 'certificates/commission_form.html', {
+        'form': form,
+        'title': 'Create New Commission'
+    })
+
+@staff_member_required
+def commission_edit(request, commission_id):
+    """Edit commission"""
+    commission = get_object_or_404(Commission, id=commission_id)
+    
+    if request.method == 'POST':
+        form = CommissionForm(request.POST, instance=commission)
+        if form.is_valid():
+            commission = form.save()
+            messages.success(request, f'Commission {commission.commission_number} updated successfully!')
+            return redirect('certificates:commission_detail', commission_id=commission.id)
+    else:
+        form = CommissionForm(instance=commission)
+    
+    return render(request, 'certificates/commission_form.html', {
+        'form': form,
+        'commission': commission,
+        'title': 'Edit Commission'
+    })
+
+@staff_member_required
+def fee_list(request):
+    """List all fees with search and filtering"""
+    fees = Fee.objects.all().order_by('-charged_date')
+    
+    if request.method == 'GET':
+        form = FeeSearchForm(request.GET)
+        if form.is_valid():
+            search = form.cleaned_data.get('search')
+            fee_type = form.cleaned_data.get('fee_type')
+            status = form.cleaned_data.get('status')
+            date_from = form.cleaned_data.get('date_from')
+            date_to = form.cleaned_data.get('date_to')
+            
+            if search:
+                fees = fees.filter(
+                    Q(fee_number__icontains=search) |
+                    Q(description__icontains=search)
+                )
+            
+            if fee_type:
+                fees = fees.filter(fee_type=fee_type)
+            
+            if status:
+                fees = fees.filter(status=status)
+            
+            if date_from:
+                fees = fees.filter(charged_date__gte=date_from)
+            
+            if date_to:
+                fees = fees.filter(charged_date__lte=date_to)
+    else:
+        form = FeeSearchForm()
+    
+    # Calculate summary statistics
+    total_fees = fees.count()
+    total_amount = fees.aggregate(total=Sum('fee_amount'))['total'] or 0
+    total_paid = fees.aggregate(total=Sum('paid_amount'))['total'] or 0
+    total_overdue = fees.filter(status__in=['pending', 'charged']).filter(due_date__lt=timezone.now().date()).count()
+    
+    return render(request, 'certificates/fee_list.html', {
+        'fees': fees,
+        'form': form,
+        'total_fees': total_fees,
+        'total_amount': total_amount,
+        'total_paid': total_paid,
+        'total_overdue': total_overdue,
+    })
+
+@staff_member_required
+def fee_detail(request, fee_id):
+    """View fee details"""
+    fee = get_object_or_404(Fee, id=fee_id)
+    return render(request, 'certificates/fee_detail.html', {
+        'fee': fee
+    })
+
+@staff_member_required
+def fee_create(request):
+    """Create new fee"""
+    if request.method == 'POST':
+        form = FeeForm(request.POST)
+        if form.is_valid():
+            fee = form.save(commit=False)
+            fee.charged_by = request.user
+            fee.save()
+            messages.success(request, f'Fee {fee.fee_number} created successfully!')
+            return redirect('certificates:fee_detail', fee_id=fee.id)
+    else:
+        form = FeeForm()
+    
+    return render(request, 'certificates/fee_form.html', {
+        'form': form,
+        'title': 'Create New Fee'
+    })
+
+@staff_member_required
+def fee_edit(request, fee_id):
+    """Edit fee"""
+    fee = get_object_or_404(Fee, id=fee_id)
+    
+    if request.method == 'POST':
+        form = FeeForm(request.POST, instance=fee)
+        if form.is_valid():
+            fee = form.save()
+            messages.success(request, f'Fee {fee.fee_number} updated successfully!')
+            return redirect('certificates:fee_detail', fee_id=fee.id)
+    else:
+        form = FeeForm(instance=fee)
+    
+    return render(request, 'certificates/fee_form.html', {
+        'form': form,
+        'fee': fee,
+        'title': 'Edit Fee'
+    })
+
+@staff_member_required
+def financial_report_list(request):
+    """List all financial reports"""
+    reports = FinancialReport.objects.all().order_by('-created_date')
+    
+    return render(request, 'certificates/financial_report_list.html', {
+        'reports': reports
+    })
+
+@staff_member_required
+def financial_report_detail(request, report_id):
+    """View financial report details"""
+    report = get_object_or_404(FinancialReport, id=report_id)
+    return render(request, 'certificates/financial_report_detail.html', {
+        'report': report
+    })
+
+@staff_member_required
+def financial_report_create(request):
+    """Create new financial report"""
+    if request.method == 'POST':
+        form = FinancialReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.generated_by = request.user
+            
+            # Calculate financial summary for the period
+            start_date = report.start_date
+            end_date = report.end_date
+            
+            # Get data for the period
+            certificates = Certificate.objects.filter(issue_date__date__range=[start_date, end_date])
+            payments = Payment.objects.filter(payment_date__date__range=[start_date, end_date])
+            claims = Claim.objects.filter(filed_date__date__range=[start_date, end_date])
+            commissions = Commission.objects.filter(earned_date__date__range=[start_date, end_date])
+            fees = Fee.objects.filter(charged_date__date__range=[start_date, end_date])
+            
+            # Calculate totals
+            report.total_premiums = certificates.aggregate(total=Sum('premium_amount'))['total'] or 0
+            report.total_payments = payments.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0
+            report.total_claims = claims.aggregate(total=Sum('claimed_amount'))['total'] or 0
+            report.total_commissions = commissions.aggregate(total=Sum('commission_amount'))['total'] or 0
+            report.total_fees = fees.aggregate(total=Sum('fee_amount'))['total'] or 0
+            
+            # Calculate net revenue
+            report.net_revenue = report.total_payments - report.total_claims - report.total_commissions - report.total_fees
+            
+            report.save()
+            messages.success(request, f'Financial Report {report.report_number} created successfully!')
+            return redirect('certificates:financial_report_detail', report_id=report.id)
+    else:
+        form = FinancialReportForm()
+    
+    return render(request, 'certificates/financial_report_form.html', {
+        'form': form,
+        'title': 'Create New Financial Report'
+    })
+
+@staff_member_required
+def financial_report_generate(request, report_id):
+    """Generate financial report"""
+    report = get_object_or_404(FinancialReport, id=report_id)
+    
+    # Update report status
+    report.status = 'generated'
+    report.generated_date = timezone.now()
+    report.generated_by = request.user
+    report.save()
+    
+    messages.success(request, f'Financial Report {report.report_number} generated successfully!')
+    return redirect('certificates:financial_report_detail', report_id=report.id)
+
+@staff_member_required
+def financial_transaction_list(request):
+    """List all financial transactions with search and filtering"""
+    transactions = FinancialTransaction.objects.all().order_by('-transaction_date')
+    
+    if request.method == 'GET':
+        form = FinancialTransactionSearchForm(request.GET)
+        if form.is_valid():
+            search = form.cleaned_data.get('search')
+            transaction_type = form.cleaned_data.get('transaction_type')
+            status = form.cleaned_data.get('status')
+            date_from = form.cleaned_data.get('date_from')
+            date_to = form.cleaned_data.get('date_to')
+            
+            if search:
+                transactions = transactions.filter(
+                    Q(transaction_number__icontains=search) |
+                    Q(certificate__policy_number__icontains=search) |
+                    Q(description__icontains=search)
+                )
+            
+            if transaction_type:
+                transactions = transactions.filter(transaction_type=transaction_type)
+            
+            if status:
+                transactions = transactions.filter(status=status)
+            
+            if date_from:
+                transactions = transactions.filter(transaction_date__date__gte=date_from)
+            
+            if date_to:
+                transactions = transactions.filter(transaction_date__date__lte=date_to)
+    else:
+        form = FinancialTransactionSearchForm()
+    
+    # Calculate summary statistics
+    total_transactions = transactions.count()
+    total_amount = transactions.aggregate(total=Sum('amount'))['total'] or 0
+    total_completed = transactions.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0
+    total_pending = transactions.filter(status='pending').count()
+    
+    return render(request, 'certificates/financial_transaction_list.html', {
+        'transactions': transactions,
+        'form': form,
+        'total_transactions': total_transactions,
+        'total_amount': total_amount,
+        'total_completed': total_completed,
+        'total_pending': total_pending,
+    })
+
+@staff_member_required
+def financial_transaction_detail(request, transaction_id):
+    """View financial transaction details"""
+    transaction = get_object_or_404(FinancialTransaction, id=transaction_id)
+    return render(request, 'certificates/financial_transaction_detail.html', {
+        'transaction': transaction
+    })
+
+@staff_member_required
+def financial_transaction_create(request):
+    """Create new financial transaction"""
+    if request.method == 'POST':
+        form = FinancialTransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.processed_by = request.user
+            transaction.save()
+            messages.success(request, f'Financial Transaction {transaction.transaction_number} created successfully!')
+            return redirect('certificates:financial_transaction_detail', transaction_id=transaction.id)
+    else:
+        form = FinancialTransactionForm()
+    
+    return render(request, 'certificates/financial_transaction_form.html', {
+        'form': form,
+        'title': 'Create New Financial Transaction'
+    })
+
+@staff_member_required
+def financial_transaction_edit(request, transaction_id):
+    """Edit financial transaction"""
+    transaction = get_object_or_404(FinancialTransaction, id=transaction_id)
+    
+    if request.method == 'POST':
+        form = FinancialTransactionForm(request.POST, instance=transaction)
+        if form.is_valid():
+            transaction = form.save()
+            messages.success(request, f'Financial Transaction {transaction.transaction_number} updated successfully!')
+            return redirect('certificates:financial_transaction_detail', transaction_id=transaction.id)
+    else:
+        form = FinancialTransactionForm(instance=transaction)
+    
+    return render(request, 'certificates/financial_transaction_form.html', {
+        'form': form,
+        'transaction': transaction,
+        'title': 'Edit Financial Transaction'
+    })
+
+@staff_member_required
+def financial_transaction_delete(request, transaction_id):
+    """Delete financial transaction"""
+    transaction = get_object_or_404(FinancialTransaction, id=transaction_id)
+    
+    if request.method == 'POST':
+        transaction_number = transaction.transaction_number
+        transaction.delete()
+        messages.success(request, f'Financial Transaction {transaction_number} deleted successfully!')
+        return redirect('certificates:financial_transaction_list')
+    
+    return render(request, 'certificates/financial_transaction_confirm_delete.html', {
+        'transaction': transaction
+    })
 
 

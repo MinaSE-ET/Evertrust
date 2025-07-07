@@ -16,6 +16,36 @@ urlpatterns = [
     re_path(r'^certificate/(?P<policy_number>POL[0-9]{7})/qr/$', views.certificate_qr, name='certificate_qr'),
     re_path(r'^certificate/(?P<policy_number>POL[0-9]{7})/edit/$', views.edit_certificate, name='edit_certificate'),
     
+    # Payment Management URLs
+    re_path(r'^certificate/(?P<policy_number>POL[0-9]{7})/payment/$', views.manage_payment, name='manage_payment'),
+    re_path(r'^certificate/(?P<policy_number>POL[0-9]{7})/payments/$', views.payment_history, name='payment_history'),
+    re_path(r'^certificate/(?P<policy_number>POL[0-9]{7})/mark-paid/$', views.mark_as_paid, name='mark_as_paid'),
+    re_path(r'^certificate/(?P<policy_number>POL[0-9]{7})/mark-overdue/$', views.mark_as_overdue, name='mark_as_overdue'),
+    
+    # Claims Management URLs
+    path('claims/', views.claim_list, name='claim_list'),
+    path('claims/create/', views.claim_create, name='claim_create'),
+    path('claims/<uuid:claim_id>/', views.claim_detail, name='claim_detail'),
+    path('claims/<uuid:claim_id>/edit/', views.claim_edit, name='claim_edit'),
+    
+    # Commissions Management URLs
+    path('commissions/', views.commission_list, name='commission_list'),
+    path('commissions/create/', views.commission_create, name='commission_create'),
+    path('commissions/<uuid:commission_id>/', views.commission_detail, name='commission_detail'),
+    path('commissions/<uuid:commission_id>/edit/', views.commission_edit, name='commission_edit'),
+    
+    # Fees Management URLs
+    path('fees/', views.fee_list, name='fee_list'),
+    path('fees/create/', views.fee_create, name='fee_create'),
+    path('fees/<uuid:fee_id>/', views.fee_detail, name='fee_detail'),
+    path('fees/<uuid:fee_id>/edit/', views.fee_edit, name='fee_edit'),
+    
+    # Financial Reports URLs
+    path('reports/', views.financial_report_list, name='financial_report_list'),
+    path('reports/create/', views.financial_report_create, name='financial_report_create'),
+    path('reports/<uuid:report_id>/', views.financial_report_detail, name='financial_report_detail'),
+    path('reports/<uuid:report_id>/generate/', views.financial_report_generate, name='financial_report_generate'),
+    
     # API endpoints
     path('api/verify/', views.api_verify_certificate, name='api_verify'),
     
@@ -40,4 +70,15 @@ urlpatterns = [
     path('admin/logout/', views.admin_logout, name='admin_logout'),
     path('certificate/<str:policy_number>/pdf/', views.certificate_pdf, name='certificate_pdf'),
     path('certificate/<str:policy_number>/pdf-professional/', views.certificate_pdf_professional, name='certificate_pdf_professional'),
+
+    # Financial Transaction URLs
+    path('financial-transactions/', views.financial_transaction_list, name='financial_transaction_list'),
+    path('financial-transactions/create/', views.financial_transaction_create, name='financial_transaction_create'),
+    path('financial-transactions/<uuid:transaction_id>/', views.financial_transaction_detail, name='financial_transaction_detail'),
+    path('financial-transactions/<uuid:transaction_id>/edit/', views.financial_transaction_edit, name='financial_transaction_edit'),
+    path('financial-transactions/<uuid:transaction_id>/delete/', views.financial_transaction_delete, name='financial_transaction_delete'),
+
+    # Financial Management URLs
+    path('financials/', views.financial_dashboard, name='financial_dashboard'),
+    path('financials/export/', views.dashboard_financial_export, name='dashboard_financial_export'),
 ] 

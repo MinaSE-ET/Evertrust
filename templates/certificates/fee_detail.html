@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ fee.fee_number }} - Fee Details{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-2">
+                        <i class="fas fa-dollar-sign me-2"></i>{{ fee.fee_number }}
+                    </h1>
+                    <p class="text-muted mb-0">Fee Details</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'certificates:fee_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                    <a href="{% url 'certificates:fee_edit' fee.id %}" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                </div>
+            </div>
+
+            <!-- Fee Information -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Fee Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Fee Number</label>
+                                        <p class="fs-5">{{ fee.fee_number }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Fee Type</label>
+                                        <p class="fs-5">
+                                            <span class="badge bg-info">{{ fee.get_fee_type_display }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Fee Amount</label>
+                                        <p class="fs-5 fw-bold text-success">${{ fee.fee_amount|floatformat:2 }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Status</label>
+                                        <p class="fs-5">
+                                            <span class="badge {% if fee.status == 'paid' %}bg-success{% elif fee.status == 'charged' %}bg-info{% elif fee.status == 'pending' %}bg-warning{% elif fee.status == 'overdue' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ fee.get_status_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Certificate</label>
+                                        <p class="fs-5">
+                                            <a href="{% url 'certificates:certificate_detail' fee.certificate.policy_number %}" class="text-decoration-none">
+                                                {{ fee.certificate.policy_number }}
+                                            </a>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Charged Date</label>
+                                        <p class="fs-6">{{ fee.charged_date|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Due Date</label>
+                                        <p class="fs-6 {% if fee.is_overdue %}text-danger{% endif %}">
+                                            {{ fee.due_date|date:"M d, Y" }}
+                                            {% if fee.is_overdue %}
+                                                <span class="badge bg-danger ms-2">{{ fee.days_overdue }} days overdue</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Charged By</label>
+                                        <p class="fs-6">
+                                            {% if fee.charged_by %}
+                                                {{ fee.charged_by.get_full_name|default:fee.charged_by.username }}
+                                            {% else %}
+                                                <span class="text-muted">Not assigned</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if fee.description %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Description</label>
+                                <p class="fs-6">{{ fee.description }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if fee.notes %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Notes</label>
+                                <p class="fs-6">{{ fee.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-dollar-sign me-2"></i>Financial Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Paid Amount</label>
+                                <p class="fs-6">${{ fee.paid_amount|floatformat:2 }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Remaining Amount</label>
+                                <p class="fs-6">${{ fee.remaining_amount|floatformat:2 }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Payment Status</label>
+                                <p class="fs-6">
+                                    {% if fee.is_paid %}
+                                        <span class="badge bg-success">Fully Paid</span>
+                                    {% elif fee.paid_amount > 0 %}
+                                        <span class="badge bg-warning">Partially Paid</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Unpaid</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if fee.paid_date %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Paid Date</label>
+                                <p class="fs-6">{{ fee.paid_date|date:"M d, Y H:i" }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

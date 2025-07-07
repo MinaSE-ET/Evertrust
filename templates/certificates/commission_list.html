@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Commissions{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-2">
+                        <i class="fas fa-handshake me-2"></i>Commissions
+                    </h1>
+                    <p class="text-muted mb-0">Manage and view all commission records</p>
+                </div>
+                <div>
+                    <a href="{% url 'certificates:commission_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Commission
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Total Commissions</h6>
+                                    <h3 class="mb-0">{{ total_commissions }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-handshake fa-2x text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Total Amount</h6>
+                                    <h3 class="mb-0">${{ total_amount|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-dollar-sign fa-2x text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Total Paid</h6>
+                                    <h3 class="mb-0">${{ total_paid|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Pending</h6>
+                                    <h3 class="mb-0">${{ total_pending|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-clock fa-2x text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            {{ form.search }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.commission_type }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.date_from }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.date_to }}
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Commissions Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>All Commissions
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if commissions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">Commission #</th>
+                                        <th class="border-0">Certificate</th>
+                                        <th class="border-0">Type</th>
+                                        <th class="border-0">Recipient</th>
+                                        <th class="border-0">Amount</th>
+                                        <th class="border-0">Status</th>
+                                        <th class="border-0">Earned Date</th>
+                                        <th class="border-0">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for commission in commissions %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold">{{ commission.commission_number }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'certificates:certificate_detail' commission.certificate.policy_number %}" class="text-decoration-none">
+                                                {{ commission.certificate.policy_number }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ commission.get_commission_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold">{{ commission.recipient_name }}</span>
+                                            <br><small class="text-muted">{{ commission.recipient_id }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">${{ commission.commission_amount|floatformat:2 }}</span>
+                                            <br><small class="text-muted">{{ commission.commission_rate }}%</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if commission.status == 'paid' %}bg-success{% elif commission.status == 'approved' %}bg-info{% elif commission.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {{ commission.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small>{{ commission.earned_date|date:"M d, Y" }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'certificates:commission_detail' commission.id %}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'certificates:commission_edit' commission.id %}" 
+                                                   class="btn btn-sm btn-outline-warning" 
+                                                   title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-handshake fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No Commissions Found</h4>
+                            <p class="text-muted">Create your first commission to get started.</p>
+                            <a href="{% url 'certificates:commission_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create First Commission
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if commissions.has_other_pages %}
+            <nav aria-label="Commissions pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if commissions.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ commissions.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in commissions.paginator.page_range %}
+                        {% if commissions.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > commissions.number|add:'-3' and num < commissions.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if commissions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ commissions.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

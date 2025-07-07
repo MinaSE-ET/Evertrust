@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
-from .models import Certificate, CertificateVerification, FinancialTransaction, Payment, Installment, Invoice
+from .models import Certificate, CertificateVerification, FinancialTransaction, Payment, Installment, Invoice, Claim, Commission, Fee, FinancialReport
 from .models import generate_policy_number
 from django.forms import DateInput, DateTimeInput
 from django.db import models
@@ -102,7 +102,7 @@ class EverTrustAdminSite(AdminSite):
 # Register the custom admin site
 admin_site = EverTrustAdminSite(name='evertrust_admin')
 
-# Enhanced Certificate Admin
+# Enhanced Certificate Admin with Financial Dashboard
 @admin.register(Certificate)
 class CertificateAdmin(admin.ModelAdmin):
     list_display = ('policy_number', 'client_name', 'coverage_level', 'net_contribution', 'total_premium')
@@ -122,6 +122,7 @@ class CertificateAdmin(admin.ModelAdmin):
     
     form = CertificateForm
     change_form_template = 'admin/certificates/certificate/change_form.html'
+    change_list_template = 'admin/financial_dashboard.html'
     
     fieldsets = (
         ('Policy Information', {
@@ -199,6 +200,70 @@ class CertificateAdmin(admin.ModelAdmin):
         models.DateField: {'widget': DateInput(attrs={'type': 'date'})},
         models.DateTimeField: {'widget': DateTimeInput(attrs={'type': 'datetime-local'})},
     }
+    
+    def changelist_view(self, request, extra_context=None):
+        """Enhanced changelist view with financial dashboard"""
+        # Get financial statistics
+        today = timezone.now()
+        thirty_days_ago = today - timedelta(days=30)
+        
+        # Certificate statistics
+        total_certificates = Certificate.objects.count()
+        active_certificates = Certificate.objects.filter(status='active').count()
+        total_premiums = Certificate.objects.aggregate(total=Sum('premium_amount'))['total'] or 0
+        
+        # Payment statistics
+        total_payments = Payment.objects.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0
+        pending_payments = Certificate.objects.filter(payment_status='pending').aggregate(total=Sum('premium_amount'))['total'] or 0
+        overdue_payments = Certificate.objects.filter(payment_status='overdue').aggregate(total=Sum('premium_amount'))['total'] or 0
+        
+        # Claims statistics
+        total_claims = Claim.objects.count()
+        total_claims_amount = Claim.objects.aggregate(total=Sum('claimed_amount'))['total'] or 0
+        total_claims_paid = Claim.objects.aggregate(total=Sum('paid_amount'))['total'] or 0
+        
+        # Commission statistics
+        total_commissions = Commission.objects.count()
+        total_commissions_amount = Commission.objects.aggregate(total=Sum('commission_amount'))['total'] or 0
+        total_commissions_paid = Commission.objects.aggregate(total=Sum('paid_amount'))['total'] or 0
+        
+        # Fee statistics
+        total_fees = Fee.objects.count()
+        total_fees_amount = Fee.objects.aggregate(total=Sum('fee_amount'))['total'] or 0
+        total_fees_paid = Fee.objects.aggregate(total=Sum('paid_amount'))['total'] or 0
+        
+        # Recent activities
+        recent_certificates = Certificate.objects.order_by('-issue_date')[:5]
+        recent_payments = Payment.objects.filter(status='completed').order_by('-payment_date')[:5]
+        recent_claims = Claim.objects.order_by('-filed_date')[:5]
+        
+        # Calculate net revenue
+        net_revenue = total_payments - total_claims_paid - total_commissions_paid - total_fees_paid
+        
+        extra_context = extra_context or {}
+        extra_context.update({
+            'total_certificates': total_certificates,
+            'active_certificates': active_certificates,
+            'total_premiums': total_premiums,
+            'total_payments': total_payments,
+            'pending_payments': pending_payments,
+            'overdue_payments': overdue_payments,
+            'total_claims': total_claims,
+            'total_claims_amount': total_claims_amount,
+            'total_claims_paid': total_claims_paid,
+            'total_commissions': total_commissions,
+            'total_commissions_amount': total_commissions_amount,
+            'total_commissions_paid': total_commissions_paid,
+            'total_fees': total_fees,
+            'total_fees_amount': total_fees_amount,
+            'total_fees_paid': total_fees_paid,
+            'net_revenue': net_revenue,
+            'recent_certificates': recent_certificates,
+            'recent_payments': recent_payments,
+            'recent_claims': recent_claims,
+        })
+        
+        return super().changelist_view(request, extra_context)
 
 # Enhanced Certificate Verification Admin
 @admin.register(CertificateVerification)
@@ -505,3 +570,171 @@ def get_urls():
     return custom_urls + urls
 
 admin.site.get_urls = get_urls
+
+@admin.register(Claim)
+class ClaimAdmin(admin.ModelAdmin):
+    list_display = [
+        'claim_number', 'certificate', 'claim_type', 'status', 
+        'claimed_amount', 'approved_amount', 'paid_amount', 
+        'claimant_name', 'filed_date'
+    ]
+    list_filter = [
+        'claim_type', 'status', 'filed_date', 'incident_date',
+        'assigned_to'
+    ]
+    search_fields = [
+        'claim_number', 'certificate__policy_number', 'claimant_name',
+        'claimant_email', 'description', 'incident_location'
+    ]
+    readonly_fields = ['claim_number', 'filed_date']
+    date_hierarchy = 'filed_date'
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('claim_number', 'certificate', 'claim_type', 'status')
+        }),
+        ('Financial Information', {
+            'fields': ('claimed_amount', 'approved_amount', 'paid_amount')
+        }),
+        ('Incident Details', {
+            'fields': ('incident_date', 'description', 'incident_location', 'police_report')
+        }),
+        ('Claimant Information', {
+            'fields': ('claimant_name', 'claimant_phone', 'claimant_email')
+        }),
+        ('Processing Information', {
+            'fields': ('assigned_to', 'review_date', 'approval_date', 'payment_date', 'notes')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('certificate', 'assigned_to')
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return self.readonly_fields + ('claim_number',)
+        return self.readonly_fields
+
+@admin.register(Commission)
+class CommissionAdmin(admin.ModelAdmin):
+    list_display = [
+        'commission_number', 'certificate', 'commission_type', 'status',
+        'commission_rate', 'commission_amount', 'paid_amount', 
+        'recipient_name', 'earned_date'
+    ]
+    list_filter = [
+        'commission_type', 'status', 'earned_date', 'approved_date', 'paid_date'
+    ]
+    search_fields = [
+        'commission_number', 'certificate__policy_number', 'recipient_name',
+        'recipient_id', 'description'
+    ]
+    readonly_fields = ['commission_number', 'earned_date']
+    date_hierarchy = 'earned_date'
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('commission_number', 'certificate', 'commission_type', 'status')
+        }),
+        ('Financial Information', {
+            'fields': ('commission_rate', 'commission_amount', 'paid_amount')
+        }),
+        ('Recipient Information', {
+            'fields': ('recipient_name', 'recipient_id', 'recipient_bank', 'recipient_account')
+        }),
+        ('Processing Information', {
+            'fields': ('approved_by', 'approved_date', 'paid_date', 'description', 'notes')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('certificate', 'approved_by')
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return self.readonly_fields + ('commission_number',)
+        return self.readonly_fields
+
+@admin.register(Fee)
+class FeeAdmin(admin.ModelAdmin):
+    list_display = [
+        'fee_number', 'certificate', 'fee_type', 'status',
+        'fee_amount', 'paid_amount', 'due_date', 'charged_date'
+    ]
+    list_filter = [
+        'fee_type', 'status', 'charged_date', 'due_date', 'paid_date', 'charged_by'
+    ]
+    search_fields = [
+        'fee_number', 'certificate__policy_number', 'description'
+    ]
+    readonly_fields = ['fee_number', 'charged_date']
+    date_hierarchy = 'charged_date'
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('fee_number', 'certificate', 'fee_type', 'status')
+        }),
+        ('Financial Information', {
+            'fields': ('fee_amount', 'paid_amount', 'due_date')
+        }),
+        ('Additional Information', {
+            'fields': ('description', 'notes', 'charged_by', 'paid_date')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('certificate', 'charged_by')
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return self.readonly_fields + ('fee_number',)
+        return self.readonly_fields
+
+@admin.register(FinancialReport)
+class FinancialReportAdmin(admin.ModelAdmin):
+    list_display = [
+        'report_number', 'title', 'report_type', 'status',
+        'start_date', 'end_date', 'net_revenue', 'created_date'
+    ]
+    list_filter = [
+        'report_type', 'status', 'created_date', 'generated_date'
+    ]
+    search_fields = [
+        'report_number', 'title', 'description'
+    ]
+    readonly_fields = [
+        'report_number', 'created_date', 'total_premiums', 'total_payments',
+        'total_claims', 'total_commissions', 'total_fees', 'net_revenue'
+    ]
+    date_hierarchy = 'created_date'
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('report_number', 'title', 'report_type', 'status')
+        }),
+        ('Report Period', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('Financial Summary', {
+            'fields': ('total_premiums', 'total_payments', 'total_claims', 
+                      'total_commissions', 'total_fees', 'net_revenue'),
+            'classes': ('collapse',)
+        }),
+        ('Additional Information', {
+            'fields': ('description', 'notes', 'generated_by', 'generated_date')
+        }),
+        ('File Information', {
+            'fields': ('file_path', 'file_size'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('generated_by')
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return self.readonly_fields + ('report_number',)
+        return self.readonly_fields
+
+# Financial dashboard functionality is now integrated into CertificateAdmin

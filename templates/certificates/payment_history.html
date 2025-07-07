@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment History - {{ certificate.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-history me-2 text-primary"></i>Payment History
+                    </h2>
+                    <p class="text-muted mb-0">Policy: {{ certificate.policy_number }} - {{ certificate.client_name }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'certificates:manage_payment' certificate.policy_number %}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Record Payment
+                    </a>
+                    <a href="{% url 'certificates:financial_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Payment Statistics -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Premium Amount</h6>
+                            <h3 class="mb-0">${{ certificate.premium_amount|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Total Paid</h6>
+                            <h3 class="mb-0">${{ total_paid|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Pending</h6>
+                            <h3 class="mb-0">${{ total_pending|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Failed</h6>
+                            <h3 class="mb-0">${{ total_failed|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate Details -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Certificate Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Policy Number:</strong> {{ certificate.policy_number }}</p>
+                            <p><strong>Client Name:</strong> {{ certificate.client_name }}</p>
+                            <p><strong>Client Email:</strong> {{ certificate.client_email }}</p>
+                            <p><strong>Certificate Type:</strong> {{ certificate.get_certificate_type_display }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Coverage Level:</strong> {{ certificate.get_coverage_level_display }}</p>
+                            <p><strong>Issue Date:</strong> {{ certificate.issue_date|date:"M d, Y" }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge {% if certificate.status == 'active' %}bg-success{% elif certificate.status == 'expired' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ certificate.get_status_display }}
+                                </span>
+                            </p>
+                            <p><strong>Payment Status:</strong> 
+                                {% if certificate.payment_status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% elif certificate.payment_status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif certificate.payment_status == 'overdue' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ certificate.payment_status|title }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment History Table -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Payment History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Payment #</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Payment Date</th>
+                                    <th>Transaction ID</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold">{{ payment.payment_number }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold {% if payment.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            ${{ payment.amount|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ payment.get_payment_method_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if payment.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif payment.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif payment.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% elif payment.status == 'cancelled' %}
+                                            <span class="badge bg-secondary">Cancelled</span>
+                                        {% elif payment.status == 'refunded' %}
+                                            <span class="badge bg-info">Refunded</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ payment.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ payment.due_date|date:"M d, Y" }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ payment.payment_date|date:"M d, Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if payment.transaction_id %}
+                                            <small class="text-muted">{{ payment.transaction_id }}</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if payment.description %}
+                                            <small>{{ payment.description|truncatechars:30 }}</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#paymentModal{{ payment.id }}"
+                                                    title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if payment.status == 'pending' %}
+                                            <button type="button" class="btn btn-outline-success btn-sm" title="Mark as Completed">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <p class="mb-0">No payment history found</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Detail Modals -->
+{% for payment in payments %}
+<div class="modal fade" id="paymentModal{{ payment.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payment Details - {{ payment.payment_number }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Payment Information</h6>
+                        <p><strong>Payment Number:</strong> {{ payment.payment_number }}</p>
+                        <p><strong>Amount:</strong> <span class="fw-bold text-success">${{ payment.amount|floatformat:2 }}</span></p>
+                        <p><strong>Method:</strong> {{ payment.get_payment_method_display }}</p>
+                        <p><strong>Status:</strong> 
+                            {% if payment.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif payment.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif payment.status == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ payment.status|title }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Timeline</h6>
+                        <p><strong>Due Date:</strong> {{ payment.due_date|date:"M d, Y" }}</p>
+                        <p><strong>Payment Date:</strong> {{ payment.payment_date|date:"M d, Y H:i" }}</p>
+                        {% if payment.processed_date %}
+                        <p><strong>Processed Date:</strong> {{ payment.processed_date|date:"M d, Y H:i" }}</p>
+                        {% endif %}
+                        {% if payment.transaction_id %}
+                        <p><strong>Transaction ID:</strong> {{ payment.transaction_id }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if payment.description or payment.notes %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Additional Information</h6>
+                        {% if payment.description %}
+                        <p><strong>Description:</strong> {{ payment.description }}</p>
+                        {% endif %}
+                        {% if payment.notes %}
+                        <p><strong>Notes:</strong> {{ payment.notes }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %} 

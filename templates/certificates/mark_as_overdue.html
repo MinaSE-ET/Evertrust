@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mark as Overdue - {{ certificate.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Mark as Overdue</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h4>Confirm Overdue Status</h4>
+                        <p class="text-muted">Are you sure you want to mark this certificate as overdue?</p>
+                    </div>
+                    
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6>Certificate Details</h6>
+                            <p><strong>Policy Number:</strong> {{ certificate.policy_number }}</p>
+                            <p><strong>Client:</strong> {{ certificate.client_name }}</p>
+                            <p><strong>Premium Amount:</strong> <span class="fw-bold text-primary">${{ certificate.premium_amount|floatformat:2 }}</span></p>
+                            <p><strong>Current Status:</strong> 
+                                {% if certificate.payment_status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% elif certificate.payment_status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif certificate.payment_status == 'overdue' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ certificate.payment_status|title }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action will:
+                        <ul class="mb-0 mt-2">
+                            <li>Mark the certificate as overdue</li>
+                            <li>Update the payment status</li>
+                            <li>This may trigger overdue notifications</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Mark as Overdue
+                            </button>
+                            <a href="{% url 'certificates:financial_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

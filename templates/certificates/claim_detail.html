@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ claim.claim_number }} - Claim Details{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-2">
+                        <i class="fas fa-file-medical me-2"></i>{{ claim.claim_number }}
+                    </h1>
+                    <p class="text-muted mb-0">Claim Details</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'certificates:claim_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                    <a href="{% url 'certificates:claim_edit' claim.id %}" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                </div>
+            </div>
+
+            <!-- Claim Information -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Claim Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Claim Number</label>
+                                        <p class="fs-5">{{ claim.claim_number }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Claim Type</label>
+                                        <p class="fs-5">
+                                            <span class="badge bg-info">{{ claim.get_claim_type_display }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Claimed Amount</label>
+                                        <p class="fs-5 fw-bold text-success">${{ claim.claimed_amount|floatformat:2 }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Status</label>
+                                        <p class="fs-5">
+                                            <span class="badge {% if claim.status == 'paid' %}bg-success{% elif claim.status == 'approved' %}bg-info{% elif claim.status == 'under_review' %}bg-warning{% elif claim.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ claim.get_status_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Certificate</label>
+                                        <p class="fs-5">
+                                            <a href="{% url 'certificates:certificate_detail' claim.certificate.policy_number %}" class="text-decoration-none">
+                                                {{ claim.certificate.policy_number }}
+                                            </a>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Filed Date</label>
+                                        <p class="fs-6">{{ claim.filed_date|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Incident Date</label>
+                                        <p class="fs-6">{{ claim.incident_date|date:"M d, Y" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Assigned To</label>
+                                        <p class="fs-6">
+                                            {% if claim.assigned_to %}
+                                                {{ claim.assigned_to.get_full_name|default:claim.assigned_to.username }}
+                                            {% else %}
+                                                <span class="text-muted">Not assigned</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if claim.description %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Claim Description</label>
+                                <p class="fs-6">{{ claim.description }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Incident Location</label>
+                                <p class="fs-6">{{ claim.incident_location }}</p>
+                            </div>
+                            
+                            {% if claim.police_report %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Police Report</label>
+                                <p class="fs-6">{{ claim.police_report }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user me-2"></i>Claimant Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Claimant Name</label>
+                                <p class="fs-6">{{ claim.claimant_name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Phone</label>
+                                <p class="fs-6">{{ claim.claimant_phone }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Email</label>
+                                <p class="fs-6">{{ claim.claimant_email }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-dollar-sign me-2"></i>Financial Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Approved Amount</label>
+                                <p class="fs-6">
+                                    {% if claim.approved_amount %}
+                                        ${{ claim.approved_amount|floatformat:2 }}
+                                    {% else %}
+                                        <span class="text-muted">Not approved yet</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Paid Amount</label>
+                                <p class="fs-6">${{ claim.paid_amount|floatformat:2 }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Remaining Amount</label>
+                                <p class="fs-6">${{ claim.remaining_amount|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

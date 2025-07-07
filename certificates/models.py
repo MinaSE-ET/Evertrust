@@ -581,3 +581,343 @@ class FinancialTransaction(models.Model):
             else:
                 self.transaction_number = f"TXN-{timezone.now().strftime('%Y%m')}-000001"
         super().save(*args, **kwargs)
+
+class Claim(models.Model):
+    CLAIM_STATUS = [
+        ('filed', 'Filed'),
+        ('under_review', 'Under Review'),
+        ('approved', 'Approved'),
+        ('paid', 'Paid'),
+        ('rejected', 'Rejected'),
+        ('pending_documents', 'Pending Documents'),
+        ('investigation', 'Under Investigation'),
+    ]
+    
+    CLAIM_TYPES = [
+        ('medical', 'Medical'),
+        ('property', 'Property'),
+        ('liability', 'Liability'),
+        ('accident', 'Accident'),
+        ('theft', 'Theft'),
+        ('natural_disaster', 'Natural Disaster'),
+        ('other', 'Other'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    certificate = models.ForeignKey(Certificate, on_delete=models.CASCADE, related_name='claims', verbose_name="Certificate")
+    claim_number = models.CharField(max_length=50, unique=True, verbose_name="Claim Number")
+    claim_type = models.CharField(max_length=20, choices=CLAIM_TYPES, verbose_name="Claim Type")
+    status = models.CharField(max_length=20, choices=CLAIM_STATUS, default='filed', verbose_name="Status")
+    
+    # Financial Information
+    claimed_amount = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="Claimed Amount")
+    approved_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, verbose_name="Approved Amount")
+    paid_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Paid Amount")
+    
+    # Dates
+    incident_date = models.DateField(verbose_name="Incident Date")
+    filed_date = models.DateTimeField(auto_now_add=True, verbose_name="Filed Date")
+    review_date = models.DateTimeField(null=True, blank=True, verbose_name="Review Date")
+    approval_date = models.DateTimeField(null=True, blank=True, verbose_name="Approval Date")
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name="Payment Date")
+    
+    # Claim Details
+    description = models.TextField(verbose_name="Claim Description")
+    incident_location = models.CharField(max_length=255, verbose_name="Incident Location")
+    police_report = models.CharField(max_length=100, blank=True, verbose_name="Police Report Number")
+    
+    # Additional Information
+    claimant_name = models.CharField(max_length=200, verbose_name="Claimant Name")
+    claimant_phone = models.CharField(max_length=20, verbose_name="Claimant Phone")
+    claimant_email = models.EmailField(verbose_name="Claimant Email")
+    
+    # Processing Information
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Assigned To")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    class Meta:
+        verbose_name = "Claim"
+        verbose_name_plural = "Claims"
+        ordering = ['-filed_date']
+        indexes = [
+            models.Index(fields=['claim_number']),
+            models.Index(fields=['certificate']),
+            models.Index(fields=['status']),
+            models.Index(fields=['claim_type']),
+            models.Index(fields=['filed_date']),
+        ]
+
+    def __str__(self):
+        return f"Claim {self.claim_number} - {self.certificate.policy_number}"
+    
+    def save(self, *args, **kwargs):
+        if not self.claim_number:
+            # Generate claim number
+            last_claim = Claim.objects.order_by('-filed_date').first()
+            if last_claim:
+                last_number = int(last_claim.claim_number.split('-')[-1])
+                self.claim_number = f"CLM-{timezone.now().strftime('%Y%m')}-{last_number + 1:06d}"
+            else:
+                self.claim_number = f"CLM-{timezone.now().strftime('%Y%m')}-000001"
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_approved(self):
+        return self.status == 'approved' or self.status == 'paid'
+    
+    @property
+    def is_paid(self):
+        return self.status == 'paid'
+    
+    @property
+    def remaining_amount(self):
+        if self.approved_amount:
+            return self.approved_amount - self.paid_amount
+        return 0
+
+class Commission(models.Model):
+    COMMISSION_TYPES = [
+        ('agent', 'Agent Commission'),
+        ('broker', 'Broker Commission'),
+        ('referral', 'Referral Commission'),
+        ('bonus', 'Performance Bonus'),
+        ('override', 'Override Commission'),
+    ]
+    
+    COMMISSION_STATUS = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('paid', 'Paid'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    certificate = models.ForeignKey(Certificate, on_delete=models.CASCADE, related_name='commissions', verbose_name="Certificate")
+    commission_number = models.CharField(max_length=50, unique=True, verbose_name="Commission Number")
+    commission_type = models.CharField(max_length=20, choices=COMMISSION_TYPES, verbose_name="Commission Type")
+    status = models.CharField(max_length=20, choices=COMMISSION_STATUS, default='pending', verbose_name="Status")
+    
+    # Financial Information
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Commission Rate (%)")
+    commission_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Commission Amount")
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Paid Amount")
+    
+    # Recipient Information
+    recipient_name = models.CharField(max_length=200, verbose_name="Recipient Name")
+    recipient_id = models.CharField(max_length=50, verbose_name="Recipient ID")
+    recipient_bank = models.CharField(max_length=200, blank=True, verbose_name="Bank Name")
+    recipient_account = models.CharField(max_length=50, blank=True, verbose_name="Account Number")
+    
+    # Dates
+    earned_date = models.DateTimeField(auto_now_add=True, verbose_name="Earned Date")
+    approved_date = models.DateTimeField(null=True, blank=True, verbose_name="Approved Date")
+    paid_date = models.DateTimeField(null=True, blank=True, verbose_name="Paid Date")
+    
+    # Additional Information
+    description = models.TextField(blank=True, verbose_name="Description")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    # Processing Information
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved By")
+    
+    class Meta:
+        verbose_name = "Commission"
+        verbose_name_plural = "Commissions"
+        ordering = ['-earned_date']
+        indexes = [
+            models.Index(fields=['commission_number']),
+            models.Index(fields=['certificate']),
+            models.Index(fields=['status']),
+            models.Index(fields=['commission_type']),
+            models.Index(fields=['earned_date']),
+        ]
+
+    def __str__(self):
+        return f"Commission {self.commission_number} - {self.certificate.policy_number}"
+    
+    def save(self, *args, **kwargs):
+        if not self.commission_number:
+            # Generate commission number
+            last_commission = Commission.objects.order_by('-earned_date').first()
+            if last_commission:
+                last_number = int(last_commission.commission_number.split('-')[-1])
+                self.commission_number = f"COM-{timezone.now().strftime('%Y%m')}-{last_number + 1:06d}"
+            else:
+                self.commission_number = f"COM-{timezone.now().strftime('%Y%m')}-000001"
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_paid(self):
+        return self.status == 'paid'
+    
+    @property
+    def remaining_amount(self):
+        return self.commission_amount - self.paid_amount
+
+class Fee(models.Model):
+    FEE_TYPES = [
+        ('processing', 'Processing Fee'),
+        ('late_fee', 'Late Fee'),
+        ('cancellation', 'Cancellation Fee'),
+        ('reinstatement', 'Reinstatement Fee'),
+        ('endorsement', 'Endorsement Fee'),
+        ('renewal', 'Renewal Fee'),
+        ('admin', 'Administrative Fee'),
+        ('service', 'Service Fee'),
+    ]
+    
+    FEE_STATUS = [
+        ('pending', 'Pending'),
+        ('charged', 'Charged'),
+        ('paid', 'Paid'),
+        ('waived', 'Waived'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    certificate = models.ForeignKey(Certificate, on_delete=models.CASCADE, related_name='fees', verbose_name="Certificate")
+    fee_number = models.CharField(max_length=50, unique=True, verbose_name="Fee Number")
+    fee_type = models.CharField(max_length=20, choices=FEE_TYPES, verbose_name="Fee Type")
+    status = models.CharField(max_length=20, choices=FEE_STATUS, default='pending', verbose_name="Status")
+    
+    # Financial Information
+    fee_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Fee Amount")
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Paid Amount")
+    
+    # Dates
+    charged_date = models.DateTimeField(auto_now_add=True, verbose_name="Charged Date")
+    due_date = models.DateField(verbose_name="Due Date")
+    paid_date = models.DateTimeField(null=True, blank=True, verbose_name="Paid Date")
+    
+    # Additional Information
+    description = models.TextField(blank=True, verbose_name="Description")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    # Processing Information
+    charged_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Charged By")
+    
+    class Meta:
+        verbose_name = "Fee"
+        verbose_name_plural = "Fees"
+        ordering = ['-charged_date']
+        indexes = [
+            models.Index(fields=['fee_number']),
+            models.Index(fields=['certificate']),
+            models.Index(fields=['status']),
+            models.Index(fields=['fee_type']),
+            models.Index(fields=['charged_date']),
+        ]
+
+    def __str__(self):
+        return f"Fee {self.fee_number} - {self.certificate.policy_number}"
+    
+    def save(self, *args, **kwargs):
+        if not self.fee_number:
+            # Generate fee number
+            last_fee = Fee.objects.order_by('-charged_date').first()
+            if last_fee:
+                last_number = int(last_fee.fee_number.split('-')[-1])
+                self.fee_number = f"FEE-{timezone.now().strftime('%Y%m')}-{last_number + 1:06d}"
+            else:
+                self.fee_number = f"FEE-{timezone.now().strftime('%Y%m')}-000001"
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_overdue(self):
+        return self.due_date < timezone.now().date() and self.status in ['pending', 'charged']
+    
+    @property
+    def days_overdue(self):
+        if self.is_overdue:
+            return (timezone.now().date() - self.due_date).days
+        return 0
+    
+    @property
+    def is_paid(self):
+        return self.status == 'paid'
+    
+    @property
+    def remaining_amount(self):
+        return self.fee_amount - self.paid_amount
+
+class FinancialReport(models.Model):
+    REPORT_TYPES = [
+        ('daily', 'Daily Report'),
+        ('weekly', 'Weekly Report'),
+        ('monthly', 'Monthly Report'),
+        ('quarterly', 'Quarterly Report'),
+        ('annual', 'Annual Report'),
+        ('custom', 'Custom Report'),
+    ]
+    
+    REPORT_STATUS = [
+        ('draft', 'Draft'),
+        ('generated', 'Generated'),
+        ('sent', 'Sent'),
+        ('archived', 'Archived'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    report_number = models.CharField(max_length=50, unique=True, verbose_name="Report Number")
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPES, verbose_name="Report Type")
+    status = models.CharField(max_length=20, choices=REPORT_STATUS, default='draft', verbose_name="Status")
+    
+    # Report Period
+    start_date = models.DateField(verbose_name="Start Date")
+    end_date = models.DateField(verbose_name="End Date")
+    
+    # Financial Summary
+    total_premiums = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Total Premiums")
+    total_payments = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Total Payments")
+    total_claims = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Total Claims")
+    total_commissions = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Total Commissions")
+    total_fees = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Total Fees")
+    net_revenue = models.DecimalField(max_digits=15, decimal_places=2, default=0, verbose_name="Net Revenue")
+    
+    # Report Details
+    title = models.CharField(max_length=200, verbose_name="Report Title")
+    description = models.TextField(blank=True, verbose_name="Description")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    # Generation Information
+    created_date = models.DateTimeField(auto_now_add=True, verbose_name="Created Date")
+    generated_date = models.DateTimeField(null=True, blank=True, verbose_name="Generated Date")
+    generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Generated By")
+    
+    # File Information
+    file_path = models.CharField(max_length=500, blank=True, verbose_name="File Path")
+    file_size = models.IntegerField(default=0, verbose_name="File Size (bytes)")
+    
+    class Meta:
+        verbose_name = "Financial Report"
+        verbose_name_plural = "Financial Reports"
+        ordering = ['-created_date']
+        indexes = [
+            models.Index(fields=['report_number']),
+            models.Index(fields=['report_type']),
+            models.Index(fields=['status']),
+            models.Index(fields=['start_date']),
+            models.Index(fields=['end_date']),
+        ]
+
+    def __str__(self):
+        return f"Report {self.report_number} - {self.title}"
+    
+    def save(self, *args, **kwargs):
+        if not self.report_number:
+            # Generate report number
+            last_report = FinancialReport.objects.order_by('-created_date').first()
+            if last_report:
+                last_number = int(last_report.report_number.split('-')[-1])
+                self.report_number = f"RPT-{timezone.now().strftime('%Y%m')}-{last_number + 1:06d}"
+            else:
+                self.report_number = f"RPT-{timezone.now().strftime('%Y%m')}-000001"
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_generated(self):
+        return self.status in ['generated', 'sent', 'archived']
+    
+    @property
+    def report_period(self):
+        return f"{self.start_date.strftime('%b %d, %Y')} - {self.end_date.strftime('%b %d, %Y')}"

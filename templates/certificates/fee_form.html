@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ title|default:"Create Fee" }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="h2 fw-bold text-dark mb-2">{{ title|default:"Create Fee" }}</h1>
+                <p class="text-muted mb-0">Enter the fee details below</p>
+            </div>
+
+            <!-- Form -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-dollar-sign me-2"></i>Fee Information
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.certificate.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.certificate.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.certificate }}
+                                    {% if form.certificate.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.certificate.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.fee_type.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.fee_type.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.fee_type }}
+                                    {% if form.fee_type.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.fee_type.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.fee_amount.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.fee_amount.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.fee_amount }}
+                                    </div>
+                                    {% if form.fee_amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.fee_amount.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.paid_amount.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.paid_amount.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.paid_amount }}
+                                    </div>
+                                    {% if form.paid_amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.paid_amount.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.due_date.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.due_date.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.due_date }}
+                                    {% if form.due_date.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.due_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.description.label }}
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.notes.label }}
+                                    </label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.notes.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a href="{% url 'certificates:fee_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>
+                                {% if fee %}Update{% else %}Create{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clean CSS -->
+<style>
+.form-control, .form-select {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    outline: 0;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.card {
+    border-radius: 0.5rem;
+    border: 1px solid #e9ecef;
+}
+
+.btn {
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.invalid-feedback {
+    font-size: 0.75rem;
+    color: #dc3545;
+}
+</style>
+
+<!-- Clean JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+                field.classList.add('is-valid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        submitBtn.disabled = true;
+    });
+    
+    // Real-time validation
+    const formFields = form.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            if (this.hasAttribute('required')) {
+                if (!this.value.trim()) {
+                    this.classList.add('is-invalid');
+                    this.classList.remove('is-valid');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                }
+            }
+        });
+        
+        field.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid') && this.value.trim()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

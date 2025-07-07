@@ -1,91 +1,991 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Financial Dashboard{% endblock %}
+{% block title %}Financial Dashboard - EverTrust Insurance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .financial-card {
+        transition: transform 0.2s ease-in-out;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .financial-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .metric-card.success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    .metric-card.warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .metric-card.danger {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+        color: #333;
+    }
+    .metric-card.info {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #333;
+    }
+    .metric-card.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .metric-card.secondary {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+    .activity-item {
+        padding: 0.75rem;
+        border-left: 4px solid #2563eb;
+        margin-bottom: 0.5rem;
+        background: #f8fafc;
+        border-radius: 0 8px 8px 0;
+    }
+    .activity-item.payment {
+        border-left-color: #10b981;
+    }
+    .activity-item.transaction {
+        border-left-color: #f59e0b;
+    }
+    .activity-item.claim {
+        border-left-color: #ef4444;
+    }
+    .activity-item.commission {
+        border-left-color: #8b5cf6;
+    }
+    .activity-item.fee {
+        border-left-color: #06b6d4;
+    }
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .table th {
+        background: #f8fafc;
+        border: none;
+        font-weight: 600;
+        color: #374151;
+    }
+    .table td {
+        border: none;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+    }
+    .filter-section {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .nav-pills .nav-link {
+        border-radius: 20px;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .nav-pills .nav-link.active {
+        background-color: #2563eb;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-4 text-primary"><i class="fas fa-chart-line me-2"></i>Financial Dashboard</h2>
+<div class="container-fluid py-4">
+    <!-- Header Section -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Premiums</h6>
-                    <h4 class="fw-bold">${{ total_premiums }}</h4>
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-primary">
+                        <i class="fas fa-chart-line me-3"></i>Financial Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Comprehensive financial overview and analytics</p>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Paid</h6>
-                    <h4 class="fw-bold text-success">${{ total_paid }}</h4>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted">Outstanding</h6>
-                    <h4 class="fw-bold text-warning">${{ outstanding }}</h4>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted">Overdue</h6>
-                    <h4 class="fw-bold text-danger">${{ overdue }}</h4>
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'certificates:dashboard_financial_export' %}?format=csv&days={{ days }}">Export as CSV</a></li>
+                            <li><a class="dropdown-item" href="{% url 'certificates:dashboard_financial_export' %}?format=json&days={{ days }}">Export as JSON</a></li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'certificates:financial_report_create' %}" class="btn btn-success">
+                        <i class="fas fa-file-alt me-2"></i>Generate Report
+                    </a>
+                    <a href="{% url 'certificates:certificate_list' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Certificate
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Certificates Financial Status</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Policy Number</th>
-                            <th>Client</th>
-                            <th>Premium</th>
-                            <th>Total Paid</th>
-                            <th>Outstanding</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cert in certificates %}
-                        <tr>
-                            <td>{{ cert.policy_number }}</td>
-                            <td>{{ cert.client_name }}</td>
-                            <td>${{ cert.premium_amount }}</td>
-                            <td>${{ cert.total_paid_amount }}</td>
-                            <td>${{ cert.remaining_amount }}</td>
-                            <td>
-                                {% if cert.payment_status == 'paid' %}
-                                    <span class="badge bg-success">Paid</span>
-                                {% elif cert.payment_status == 'overdue' %}
-                                    <span class="badge bg-danger">Overdue</span>
-                                {% elif cert.payment_status == 'pending' %}
-                                    <span class="badge bg-warning text-dark">Pending</span>
-                                {% elif cert.payment_status == 'installment' %}
-                                    <span class="badge bg-info text-dark">Installment</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ cert.payment_status|capfirst }}</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="6" class="text-center">No certificates found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+    <!-- Financial Management Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>Financial Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:financial_transaction_list' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-exchange-alt me-2"></i>Transactions
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:claim_list' %}" class="btn btn-outline-info">
+                                    <i class="fas fa-file-medical me-2"></i>Claims
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:commission_list' %}" class="btn btn-outline-success">
+                                    <i class="fas fa-handshake me-2"></i>Commissions
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:fee_list' %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-dollar-sign me-2"></i>Fees
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:financial_report_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-chart-line me-2"></i>Reports
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:financial_transaction_create' %}" class="btn btn-success">
+                                    <i class="fas fa-plus me-2"></i>New Transaction
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:claim_create' %}" class="btn btn-info">
+                                    <i class="fas fa-plus me-2"></i>New Claim
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:commission_create' %}" class="btn btn-success">
+                                    <i class="fas fa-plus me-2"></i>New Commission
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Date Range Filter -->
+    <div class="filter-section">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h6 class="mb-2"><i class="fas fa-calendar me-2"></i>Date Range</h6>
+                <div class="btn-group" role="group">
+                    <a href="?days=7" class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">7 Days</a>
+                    <a href="?days=30" class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">30 Days</a>
+                    <a href="?days=90" class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">90 Days</a>
+                    <a href="?days=365" class="btn btn-sm {% if days == 365 %}btn-primary{% else %}btn-outline-primary{% endif %}">1 Year</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <small class="text-muted">
+                    Showing data from {{ start_date|date:"M d, Y" }} to {{ end_date|date:"M d, Y" }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">Total Premiums</h6>
+                        <h3 class="mb-0 fw-bold">${{ total_premiums|floatformat:2 }}</h3>
+                        <small class="opacity-75">All certificates</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-dollar-sign fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="metric-card success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">Total Paid</h6>
+                        <h3 class="mb-0 fw-bold">${{ total_paid|floatformat:2 }}</h3>
+                        <small class="opacity-75">Completed payments</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="metric-card warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">Outstanding</h6>
+                        <h3 class="mb-0 fw-bold">${{ outstanding|floatformat:2 }}</h3>
+                        <small class="opacity-75">Pending payments</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-clock fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="metric-card danger">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">Total Claims</h6>
+                        <h3 class="mb-0 fw-bold">${{ total_claims_amount|floatformat:2 }}</h3>
+                        <small class="opacity-75">Claimed amount</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="metric-card info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">Commissions</h6>
+                        <h3 class="mb-0 fw-bold">${{ total_commissions_amount|floatformat:2 }}</h3>
+                        <small class="opacity-75">Total earned</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-percentage fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="metric-card primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">Net Revenue</h6>
+                        <h3 class="mb-0 fw-bold">${{ net_revenue|floatformat:2 }}</h3>
+                        <small class="opacity-75">After deductions</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills" id="financialTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab">
+                        <i class="fas fa-chart-pie me-2"></i>Overview
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="claims-tab" data-bs-toggle="pill" data-bs-target="#claims" type="button" role="tab">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Claims
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="commissions-tab" data-bs-toggle="pill" data-bs-target="#commissions" type="button" role="tab">
+                        <i class="fas fa-percentage me-2"></i>Commissions
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="fees-tab" data-bs-toggle="pill" data-bs-target="#fees" type="button" role="tab">
+                        <i class="fas fa-money-bill me-2"></i>Fees
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reports-tab" data-bs-toggle="pill" data-bs-target="#reports" type="button" role="tab">
+                        <i class="fas fa-file-alt me-2"></i>Reports
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="financialTabContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <!-- Charts and Analytics -->
+            <div class="row mb-4">
+                <!-- Payment Status Breakdown -->
+                <div class="col-lg-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="mb-3"><i class="fas fa-pie-chart me-2"></i>Payment Status Breakdown</h5>
+                        <div class="row">
+                            {% for status in payment_status_breakdown %}
+                            <div class="col-6 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        {% if status.payment_status == 'paid' %}
+                                            <i class="fas fa-check-circle text-success fa-lg"></i>
+                                        {% elif status.payment_status == 'pending' %}
+                                            <i class="fas fa-clock text-warning fa-lg"></i>
+                                        {% elif status.payment_status == 'overdue' %}
+                                            <i class="fas fa-exclamation-triangle text-danger fa-lg"></i>
+                                        {% elif status.payment_status == 'installment' %}
+                                            <i class="fas fa-credit-card text-info fa-lg"></i>
+                                        {% else %}
+                                            <i class="fas fa-question-circle text-secondary fa-lg"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">{{ status.payment_status|title }}</h6>
+                                        <p class="mb-0 text-muted">{{ status.count }} certificates</p>
+                                        <small class="text-primary fw-bold">${{ status.total_amount|floatformat:2 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certificate Type Breakdown -->
+                <div class="col-lg-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Certificate Type Distribution</h5>
+                        <div class="row">
+                            {% for type in certificate_type_breakdown %}
+                            <div class="col-6 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-file-contract text-primary fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">{{ type.certificate_type|title }}</h6>
+                                        <p class="mb-0 text-muted">{{ type.count }} certificates</p>
+                                        <small class="text-primary fw-bold">${{ type.total_premium|floatformat:2 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="row mb-4">
+                <div class="col-lg-4 mb-4">
+                    <div class="chart-container">
+                        <h5 class="mb-3"><i class="fas fa-history me-2"></i>Recent Activities</h5>
+                        <div class="recent-activities">
+                            {% for activity in recent_activities %}
+                            <div class="activity-item {{ activity.type }}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1 fw-semibold">{{ activity.description }}</p>
+                                        <small class="text-muted">{{ activity.date|date:"M d, Y H:i" }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-bold {% if activity.amount > 0 %}text-success{% else %}text-danger{% endif %}">${{ activity.amount|floatformat:2 }}</span>
+                                        <div>
+                                            <span class="status-badge bg-success text-white">{{ activity.status|title }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted text-center py-3">No recent activities</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Transactions -->
+                <div class="col-lg-8 mb-4">
+                    <div class="chart-container">
+                        <h5 class="mb-3"><i class="fas fa-exchange-alt me-2"></i>Recent Financial Transactions</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Transaction #</th>
+                                        <th>Type</th>
+                                        <th>Certificate</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transaction in transactions %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold">{{ transaction.transaction_number }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ transaction.get_transaction_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'certificates:certificate_detail' transaction.certificate.policy_number %}" class="text-decoration-none">
+                                                {{ transaction.certificate.policy_number }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold {% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                ${{ transaction.amount|floatformat:2 }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if transaction.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif transaction.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif transaction.status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ transaction.status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ transaction.transaction_date|date:"M d, Y" }}</small>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p class="mb-0">No transactions found</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Claims Tab -->
+        <div class="tab-pane fade" id="claims" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-exclamation-triangle me-2"></i>Claims Overview</h5>
+                        <a href="{% url 'certificates:claim_list' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-list me-2"></i>View All Claims
+                        </a>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center">
+                                    <h6>Total Claims</h6>
+                                    <h3>{{ claims.count }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body text-center">
+                                    <h6>Claimed Amount</h6>
+                                    <h3>${{ total_claims_amount|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h6>Approved Amount</h6>
+                                    <h3>${{ total_claims_approved|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h6>Paid Amount</h6>
+                                    <h3>${{ total_claims_paid|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commissions Tab -->
+        <div class="tab-pane fade" id="commissions" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-percentage me-2"></i>Commissions Overview</h5>
+                        <a href="{% url 'certificates:commission_list' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-list me-2"></i>View All Commissions
+                        </a>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h6>Total Commissions</h6>
+                                    <h3>{{ commissions.count }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h6>Total Amount</h6>
+                                    <h3>${{ total_commissions_amount|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h6>Paid Amount</h6>
+                                    <h3>${{ total_commissions_paid|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body text-center">
+                                    <h6>Pending Amount</h6>
+                                    <h3>${{ total_commissions_pending|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fees Tab -->
+        <div class="tab-pane fade" id="fees" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-money-bill me-2"></i>Fees Overview</h5>
+                        <a href="{% url 'certificates:fee_list' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-list me-2"></i>View All Fees
+                        </a>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-secondary text-white">
+                                <div class="card-body text-center">
+                                    <h6>Total Fees</h6>
+                                    <h3>{{ fees.count }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h6>Total Amount</h6>
+                                    <h3>${{ total_fees_amount|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h6>Paid Amount</h6>
+                                    <h3>${{ total_fees_paid|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center">
+                                    <h6>Overdue Fees</h6>
+                                    <h3>{{ total_fees_overdue }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div class="tab-pane fade" id="reports" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-file-alt me-2"></i>Financial Reports</h5>
+                        <a href="{% url 'certificates:financial_report_list' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-list me-2"></i>View All Reports
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Report #</th>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Period</th>
+                                    <th>Status</th>
+                                    <th>Net Revenue</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in reports %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold">{{ report.report_number }}</span>
+                                    </td>
+                                    <td>{{ report.title }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ report.get_report_type_display }}</span>
+                                    </td>
+                                    <td>{{ report.report_period }}</td>
+                                    <td>
+                                        {% if report.status == 'generated' %}
+                                            <span class="badge bg-success">Generated</span>
+                                        {% elif report.status == 'draft' %}
+                                            <span class="badge bg-warning text-dark">Draft</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ report.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">${{ report.net_revenue|floatformat:2 }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'certificates:financial_report_detail' report.id %}" class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if report.status == 'draft' %}
+                                            <a href="{% url 'certificates:financial_report_generate' report.id %}" class="btn btn-outline-success">
+                                                <i class="fas fa-play"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-file-alt fa-2x mb-2"></i>
+                                        <p class="mb-0">No reports found</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificates Financial Status -->
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Certificates Financial Status</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control form-control-sm" id="certificateSearch" placeholder="Search certificates...">
+                        <select class="form-select form-select-sm" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="installment">Installment</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="certificatesTable">
+                        <thead>
+                            <tr>
+                                <th>Policy Number</th>
+                                <th>Client</th>
+                                <th>Type</th>
+                                <th>Premium</th>
+                                <th>Paid</th>
+                                <th>Outstanding</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cert_data in certificates %}
+                            <tr data-status="{{ cert_data.payment_status }}">
+                                <td>
+                                    <span class="fw-semibold">{{ cert_data.certificate.policy_number }}</span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-semibold">{{ cert_data.certificate.client_name }}</div>
+                                        <small class="text-muted">{{ cert_data.certificate.client_email }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ cert_data.certificate.get_certificate_type_display }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">${{ cert_data.certificate.premium_amount|floatformat:2 }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-success fw-bold">${{ cert_data.total_paid_amount|floatformat:2 }}</span>
+                                </td>
+                                <td>
+                                    <span class="{% if cert_data.remaining_amount > 0 %}text-warning{% else %}text-success{% endif %} fw-bold">
+                                        ${{ cert_data.remaining_amount|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if cert_data.payment_status == 'paid' %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% elif cert_data.payment_status == 'overdue' %}
+                                        <span class="badge bg-danger">Overdue</span>
+                                    {% elif cert_data.payment_status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif cert_data.payment_status == 'installment' %}
+                                        <span class="badge bg-info text-dark">Installment</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ cert_data.payment_status|capfirst }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'certificates:certificate_detail' cert_data.certificate.policy_number %}" 
+                                           class="btn btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'certificates:manage_payment' cert_data.certificate.policy_number %}" 
+                                           class="btn btn-outline-success" title="Manage Payment">
+                                            <i class="fas fa-credit-card"></i>
+                                        </a>
+                                        <a href="{% url 'certificates:payment_history' cert_data.certificate.policy_number %}" 
+                                           class="btn btn-outline-info" title="Payment History">
+                                            <i class="fas fa-history"></i>
+                                        </a>
+                                        {% if cert_data.payment_status != 'paid' %}
+                                        <a href="{% url 'certificates:mark_as_paid' cert_data.certificate.policy_number %}" 
+                                           class="btn btn-outline-success" title="Mark as Paid">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if cert_data.payment_status != 'overdue' %}
+                                        <a href="{% url 'certificates:mark_as_overdue' cert_data.certificate.policy_number %}" 
+                                           class="btn btn-outline-warning" title="Mark as Overdue">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="{% url 'certificates:certificate_pdf' cert_data.certificate.policy_number %}" 
+                                           class="btn btn-outline-secondary" title="Download PDF">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-file-contract fa-2x mb-2"></i>
+                                    <p class="mb-0">No certificates found</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Management Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>Financial Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:financial_transaction_list' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-exchange-alt me-2"></i>Transactions
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:claim_list' %}" class="btn btn-outline-info">
+                                    <i class="fas fa-file-medical me-2"></i>Claims
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:commission_list' %}" class="btn btn-outline-success">
+                                    <i class="fas fa-handshake me-2"></i>Commissions
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:fee_list' %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-dollar-sign me-2"></i>Fees
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:financial_report_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-chart-line me-2"></i>Reports
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:financial_transaction_create' %}" class="btn btn-success">
+                                    <i class="fas fa-plus me-2"></i>New Transaction
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:claim_create' %}" class="btn btn-info">
+                                    <i class="fas fa-plus me-2"></i>New Claim
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid">
+                                <a href="{% url 'certificates:commission_create' %}" class="btn btn-success">
+                                    <i class="fas fa-plus me-2"></i>New Commission
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Overview -->
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('certificateSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const table = document.getElementById('certificatesTable');
+    const rows = table.querySelectorAll('tbody tr');
+
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusTerm = statusFilter.value.toLowerCase();
+
+        rows.forEach(row => {
+            const policyNumber = row.cells[0].textContent.toLowerCase();
+            const clientName = row.cells[1].textContent.toLowerCase();
+            const status = row.getAttribute('data-status').toLowerCase();
+            
+            const matchesSearch = policyNumber.includes(searchTerm) || clientName.includes(searchTerm);
+            const matchesStatus = !statusTerm || status === statusTerm;
+            
+            row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+
+    // Add loading states and animations
+    const cards = document.querySelectorAll('.metric-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('animate__animated', 'animate__fadeInUp');
+    });
+
+    // Tab functionality
+    const tabs = document.querySelectorAll('[data-bs-toggle="pill"]');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('data-bs-target'));
+            if (target) {
+                // Hide all tab panes
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Show target pane and activate tab
+                target.classList.add('show', 'active');
+                this.classList.add('active');
+            }
+        });
+    });
+});
+</script>
 {% endblock %} 

@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ commission.commission_number }} - Commission Details{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-2">
+                        <i class="fas fa-handshake me-2"></i>{{ commission.commission_number }}
+                    </h1>
+                    <p class="text-muted mb-0">Commission Details</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'certificates:commission_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                    <a href="{% url 'certificates:commission_edit' commission.id %}" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                </div>
+            </div>
+
+            <!-- Commission Information -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Commission Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Commission Number</label>
+                                        <p class="fs-5">{{ commission.commission_number }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Commission Type</label>
+                                        <p class="fs-5">
+                                            <span class="badge bg-info">{{ commission.get_commission_type_display }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Commission Rate</label>
+                                        <p class="fs-5 fw-bold text-success">{{ commission.commission_rate }}%</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Status</label>
+                                        <p class="fs-5">
+                                            <span class="badge {% if commission.status == 'paid' %}bg-success{% elif commission.status == 'approved' %}bg-info{% elif commission.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {{ commission.get_status_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Certificate</label>
+                                        <p class="fs-5">
+                                            <a href="{% url 'certificates:certificate_detail' commission.certificate.policy_number %}" class="text-decoration-none">
+                                                {{ commission.certificate.policy_number }}
+                                            </a>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Earned Date</label>
+                                        <p class="fs-6">{{ commission.earned_date|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Approved Date</label>
+                                        <p class="fs-6">
+                                            {% if commission.approved_date %}
+                                                {{ commission.approved_date|date:"M d, Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Not approved yet</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Paid Date</label>
+                                        <p class="fs-6">
+                                            {% if commission.paid_date %}
+                                                {{ commission.paid_date|date:"M d, Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Not paid yet</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if commission.description %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Description</label>
+                                <p class="fs-6">{{ commission.description }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if commission.notes %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Notes</label>
+                                <p class="fs-6">{{ commission.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user me-2"></i>Recipient Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Recipient Name</label>
+                                <p class="fs-6">{{ commission.recipient_name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Recipient ID</label>
+                                <p class="fs-6">{{ commission.recipient_id }}</p>
+                            </div>
+                            {% if commission.recipient_bank %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Bank Name</label>
+                                <p class="fs-6">{{ commission.recipient_bank }}</p>
+                            </div>
+                            {% endif %}
+                            {% if commission.recipient_account %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Account Number</label>
+                                <p class="fs-6">{{ commission.recipient_account }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-dollar-sign me-2"></i>Financial Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Commission Amount</label>
+                                <p class="fs-6 fw-bold text-success">${{ commission.commission_amount|floatformat:2 }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Paid Amount</label>
+                                <p class="fs-6">${{ commission.paid_amount|floatformat:2 }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Remaining Amount</label>
+                                <p class="fs-6">${{ commission.remaining_amount|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ transaction.transaction_number }} - Financial Transaction{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-2">
+                        <i class="fas fa-exchange-alt me-2"></i>{{ transaction.transaction_number }}
+                    </h1>
+                    <p class="text-muted mb-0">Financial Transaction Details</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'certificates:financial_transaction_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                    <a href="{% url 'certificates:financial_transaction_edit' transaction.id %}" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <a href="{% url 'certificates:financial_transaction_delete' transaction.id %}" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </a>
+                </div>
+            </div>
+
+            <!-- Transaction Information -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Transaction Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Transaction Number</label>
+                                        <p class="fs-5">{{ transaction.transaction_number }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Transaction Type</label>
+                                        <p class="fs-5">
+                                            <span class="badge bg-info">{{ transaction.get_transaction_type_display }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Amount</label>
+                                        <p class="fs-5 fw-bold text-success">${{ transaction.amount|floatformat:2 }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Status</label>
+                                        <p class="fs-5">
+                                            <span class="badge {% if transaction.status == 'completed' %}bg-success{% elif transaction.status == 'pending' %}bg-warning{% elif transaction.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ transaction.get_status_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Certificate</label>
+                                        <p class="fs-5">
+                                            <a href="{% url 'certificates:certificate_detail' transaction.certificate.policy_number %}" class="text-decoration-none">
+                                                {{ transaction.certificate.policy_number }}
+                                            </a>
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Transaction Date</label>
+                                        <p class="fs-6">{{ transaction.transaction_date|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Processed Date</label>
+                                        <p class="fs-6">
+                                            {% if transaction.processed_date %}
+                                                {{ transaction.processed_date|date:"M d, Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">Not processed yet</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-muted">Processed By</label>
+                                        <p class="fs-6">
+                                            {% if transaction.processed_by %}
+                                                {{ transaction.processed_by.get_full_name|default:transaction.processed_by.username }}
+                                            {% else %}
+                                                <span class="text-muted">Not assigned</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if transaction.description %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Description</label>
+                                <p class="fs-6">{{ transaction.description }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if transaction.reference %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Reference</label>
+                                <p class="fs-6">{{ transaction.reference }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if transaction.notes %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Notes</label>
+                                <p class="fs-6">{{ transaction.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-link me-2"></i>Related Records
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if transaction.payment %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Related Payment</label>
+                                <p class="fs-6">{{ transaction.payment.payment_number }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if transaction.installment %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Related Installment</label>
+                                <p class="fs-6">{{ transaction.installment.installment_number }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if transaction.invoice %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted">Related Invoice</label>
+                                <p class="fs-6">{{ transaction.invoice.invoice_number }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if not transaction.payment and not transaction.installment and not transaction.invoice %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-unlink fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">No related records</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Fees{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-2">
+                        <i class="fas fa-dollar-sign me-2"></i>Fees
+                    </h1>
+                    <p class="text-muted mb-0">Manage and view all fee records</p>
+                </div>
+                <div>
+                    <a href="{% url 'certificates:fee_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Fee
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Total Fees</h6>
+                                    <h3 class="mb-0">{{ total_fees }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-dollar-sign fa-2x text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Total Amount</h6>
+                                    <h3 class="mb-0">${{ total_amount|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-dollar-sign fa-2x text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Total Paid</h6>
+                                    <h3 class="mb-0">${{ total_paid|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title text-muted">Overdue</h6>
+                                    <h3 class="mb-0">{{ total_overdue }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            {{ form.search }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.fee_type }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.date_from }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.date_to }}
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Fees Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>All Fees
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if fees %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">Fee #</th>
+                                        <th class="border-0">Certificate</th>
+                                        <th class="border-0">Type</th>
+                                        <th class="border-0">Amount</th>
+                                        <th class="border-0">Status</th>
+                                        <th class="border-0">Due Date</th>
+                                        <th class="border-0">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for fee in fees %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold">{{ fee.fee_number }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'certificates:certificate_detail' fee.certificate.policy_number %}" class="text-decoration-none">
+                                                {{ fee.certificate.policy_number }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ fee.get_fee_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">${{ fee.fee_amount|floatformat:2 }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if fee.status == 'paid' %}bg-success{% elif fee.status == 'charged' %}bg-info{% elif fee.status == 'pending' %}bg-warning{% elif fee.status == 'overdue' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ fee.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="{% if fee.is_overdue %}text-danger{% endif %}">
+                                                {{ fee.due_date|date:"M d, Y" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'certificates:fee_detail' fee.id %}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'certificates:fee_edit' fee.id %}" 
+                                                   class="btn btn-sm btn-outline-warning" 
+                                                   title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-dollar-sign fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No Fees Found</h4>
+                            <p class="text-muted">Create your first fee to get started.</p>
+                            <a href="{% url 'certificates:fee_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create First Fee
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if fees.has_other_pages %}
+            <nav aria-label="Fees pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if fees.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ fees.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in fees.paginator.page_range %}
+                        {% if fees.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > fees.number|add:'-3' and num < fees.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if fees.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ fees.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

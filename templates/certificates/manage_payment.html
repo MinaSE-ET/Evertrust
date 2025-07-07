@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Payment - {{ certificate.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-credit-card me-2 text-primary"></i>Manage Payment
+                    </h2>
+                    <p class="text-muted mb-0">Policy: {{ certificate.policy_number }}</p>
+                </div>
+                <div class="text-end">
+                    <a href="{% url 'certificates:financial_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Certificate Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Certificate Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Client:</strong> {{ certificate.client_name }}</p>
+                            <p><strong>Type:</strong> {{ certificate.get_certificate_type_display }}</p>
+                            <p><strong>Coverage Level:</strong> {{ certificate.get_coverage_level_display }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Premium Amount:</strong> <span class="fw-bold text-primary">${{ certificate.premium_amount|floatformat:2 }}</span></p>
+                            <p><strong>Total Paid:</strong> <span class="fw-bold text-success">${{ total_paid|floatformat:2 }}</span></p>
+                            <p><strong>Remaining:</strong> <span class="fw-bold text-warning">${{ remaining|floatformat:2 }}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Form -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Record New Payment</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">Payment Amount *</label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                    <div class="text-danger small">{{ form.amount.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.payment_method.id_for_label }}" class="form-label">Payment Method *</label>
+                                {{ form.payment_method }}
+                                {% if form.payment_method.errors %}
+                                    <div class="text-danger small">{{ form.payment_method.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.due_date.id_for_label }}" class="form-label">Due Date *</label>
+                                {{ form.due_date }}
+                                {% if form.due_date.errors %}
+                                    <div class="text-danger small">{{ form.due_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.transaction_id.id_for_label }}" class="form-label">Transaction ID</label>
+                                {{ form.transaction_id }}
+                                {% if form.transaction_id.errors %}
+                                    <div class="text-danger small">{{ form.transaction_id.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small">{{ form.notes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Record Payment
+                            </button>
+                            <a href="{% url 'certificates:payment_history' certificate.policy_number %}" class="btn btn-outline-primary">
+                                <i class="fas fa-history me-2"></i>View Payment History
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Recent Payments -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Payments</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Payment #</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold">{{ payment.payment_number }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">${{ payment.amount|floatformat:2 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ payment.get_payment_method_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if payment.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif payment.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif payment.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ payment.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ payment.payment_date|date:"M d, Y H:i" }}</small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <p class="mb-0">No payments recorded yet</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
