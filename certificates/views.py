@@ -101,25 +101,38 @@ def printable_certificate(request, policy_number):
 
 @staff_member_required
 def certificate_pdf(request, policy_number):
-    """Generate PDF for certificate"""
+    """Generate PDF for certificate with fallback options"""
     certificate = get_object_or_404(Certificate, policy_number=policy_number)
     
     # Create the HttpResponse object with PDF headers
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="certificate_{certificate.policy_number}.pdf"'
     
-    # Try to use DOCX template if available
-    template_path = 'EverTrust_Travel_Insurance_Template.docx'
-    if os.path.exists(template_path):
-        pdf_content = generate_certificate_from_template(certificate, template_path)
-        if pdf_content:
-            response.write(pdf_content)
-            return response
-    
-    # Fallback to ReportLab PDF generation
-    pdf_content = generate_certificate_pdf(certificate)
-    response.write(pdf_content)
-    return response
+    try:
+        # Try to use DOCX template if available
+        template_path = 'EverTrust_Travel_Insurance_Template.docx'
+        if os.path.exists(template_path):
+            pdf_content = generate_certificate_from_template(certificate, template_path)
+            if pdf_content:
+                response.write(pdf_content)
+                return response
+        
+        # Fallback to simple ReportLab PDF generation
+        from .utils import generate_simple_pdf
+        pdf_content = generate_simple_pdf(certificate)
+        response.write(pdf_content)
+        return response
+        
+    except Exception as e:
+        print(f"PDF generation error: {e}")
+        # Final fallback: Return a simple text response
+        response = HttpResponse(content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename="certificate_{certificate.policy_number}.txt"'
+        response.write(f"Certificate {certificate.policy_number}\n")
+        response.write(f"Client: {certificate.client_name}\n")
+        response.write(f"Amount: ${certificate.insured_amount}\n")
+        response.write(f"Status: {certificate.status}\n")
+        return response
 
 @staff_member_required
 def certificate_html(request, policy_number):
@@ -1019,322 +1032,30 @@ def image_to_data_url(path):
 
 @staff_member_required
 def certificate_pdf_professional(request, policy_number):
-    """Generate a professional PDF certificate using WeasyPrint"""
+    """Generate professional PDF for certificate using WeasyPrint"""
     certificate = get_object_or_404(Certificate, policy_number=policy_number)
     
-    # Build the absolute URL to the QR code view
-    qr_code_url = request.build_absolute_uri(reverse('certificates:certificate_qr', args=[policy_number]))
-
-    # Convert static images to data URLs
-    logo_path = os.path.join(settings.STATIC_ROOT, 'images/Evertrust-logo.png')
-    seal_path = os.path.join(settings.STATIC_ROOT, 'images/seal evertrust.png')
-    signature_path = os.path.join(settings.STATIC_ROOT, 'images/signature.png')
-
-    context = {
-        'certificate': certificate,
-        'qr_code_path': qr_code_url,
-        'logo_data_url': image_to_data_url(logo_path),
-        'seal_data_url': image_to_data_url(seal_path),
-        'signature_data_url': image_to_data_url(signature_path),
-        'current_date': timezone.now().strftime('%B %d, %Y'),
-    }
+    # Create the HttpResponse object with PDF headers
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="certificate_{certificate.policy_number}.pdf"'
     
-    # Render HTML template for PDF
-    html_string = render_to_string('certificates/certificate_pdf_template.html', context)
-    
-    # Create PDF with custom CSS
-    font_config = FontConfiguration()
-    css_string = '''
-        @page {
-            size: A4;
-            margin: 1cm;
-            @top-center {
-                content: "EverTrust Insurance Certificate";
-                font-size: 10pt;
-                color: #2563eb;
-            }
-            @bottom-center {
-                content: "Page " counter(page) " of " counter(pages);
-                font-size: 10pt;
-                color: #64748b;
-            }
-        }
+    try:
+        # Use the WeasyPrint-based PDF generation function
+        from .utils import generate_certificate_pdf
+        pdf_content = generate_certificate_pdf(certificate)
+        response.write(pdf_content)
+        return response
         
-        body {
-            font-family: 'Times New Roman', serif;
-            line-height: 1.6;
-            color: #1e293b;
-            background: white;
-        }
-        
-        .certificate-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2cm;
-            border: 3px solid #2563eb;
-            border-radius: 15px;
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            position: relative;
-        }
-        
-        .certificate-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="%232563eb" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
-            border-radius: 15px;
-            z-index: -1;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 2cm;
-            border-bottom: 2px solid #2563eb;
-            padding-bottom: 1cm;
-        }
-        
-        .logo {
-            width: 120px;
-            height: auto;
-            margin-bottom: 1cm;
-        }
-        
-        .company-name {
-            font-size: 28pt;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 0.5cm;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        .certificate-title {
-            font-size: 24pt;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 0.5cm;
-            text-transform: uppercase;
-        }
-        
-        .certificate-subtitle {
-            font-size: 14pt;
-            color: #64748b;
-            margin-bottom: 1cm;
-        }
-        
-        .certificate-number {
-            font-size: 12pt;
-            color: #64748b;
-            margin-bottom: 1cm;
-        }
-        
-        .main-content {
-            margin: 2cm 0;
-        }
-        
-        .policy-info {
-            background: #f1f5f9;
-            padding: 1cm;
-            border-radius: 10px;
-            margin-bottom: 1.5cm;
-            border-left: 5px solid #2563eb;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5cm;
-            align-items: center;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            color: #374151;
-            min-width: 150px;
-        }
-        
-        .info-value {
-            color: #1e293b;
-            text-align: right;
-        }
-        
-        .coverage-details {
-            background: #fef3c7;
-            padding: 1cm;
-            border-radius: 10px;
-            margin-bottom: 1.5cm;
-            border-left: 5px solid #f59e0b;
-        }
-        
-        .coverage-title {
-            font-size: 16pt;
-            font-weight: bold;
-            color: #92400e;
-            margin-bottom: 0.5cm;
-        }
-        
-        .coverage-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5cm;
-        }
-        
-        .coverage-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.3cm 0;
-            border-bottom: 1px solid #fde68a;
-        }
-        
-        .coverage-label {
-            font-weight: bold;
-            color: #92400e;
-        }
-        
-        .coverage-amount {
-            color: #1e293b;
-            font-weight: bold;
-        }
-        
-        .terms-section {
-            background: #f0f9ff;
-            padding: 1cm;
-            border-radius: 10px;
-            margin-bottom: 1.5cm;
-            border-left: 5px solid #0ea5e9;
-        }
-        
-        .terms-title {
-            font-size: 16pt;
-            font-weight: bold;
-            color: #0c4a6e;
-            margin-bottom: 0.5cm;
-        }
-        
-        .terms-list {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .terms-list li {
-            margin-bottom: 0.3cm;
-            padding-left: 1cm;
-            position: relative;
-        }
-        
-        .terms-list li::before {
-            content: '•';
-            color: #0ea5e9;
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-        }
-        
-        .footer {
-            margin-top: 2cm;
-            text-align: center;
-            border-top: 2px solid #2563eb;
-            padding-top: 1cm;
-        }
-        
-        .qr-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1cm;
-        }
-        
-        .qr-code {
-            width: 100px;
-            height: 100px;
-        }
-        
-        .verification-info {
-            text-align: right;
-            font-size: 10pt;
-            color: #64748b;
-        }
-        
-        .signature-section {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2cm;
-        }
-        
-        .signature-box {
-            text-align: center;
-            flex: 1;
-            margin: 0 1cm;
-        }
-        
-        .signature-line {
-            border-top: 2px solid #2563eb;
-            margin-top: 1cm;
-            padding-top: 0.5cm;
-        }
-        
-        .signature-name {
-            font-weight: bold;
-            color: #2563eb;
-        }
-        
-        .signature-title {
-            font-size: 10pt;
-            color: #64748b;
-        }
-        
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 48pt;
-            color: rgba(37, 99, 235, 0.1);
-            font-weight: bold;
-            z-index: -1;
-        }
-        
-        .security-features {
-            position: absolute;
-            top: 1cm;
-            right: 1cm;
-            font-size: 8pt;
-            color: #64748b;
-        }
-        
-        .certificate-seal {
-            position: absolute;
-            bottom: 1cm;
-            right: 1cm;
-            width: 80px;
-            height: 80px;
-            border: 2px solid #2563eb;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: white;
-            font-weight: bold;
-            font-size: 8pt;
-            text-align: center;
-        }
-    '''
-    
-    # Render HTML template for PDF
-    html = HTML(string=html_string)
-    css = CSS(string=css_string, font_config=font_config)
-    
-    # Create PDF
-    pdf = html.write_pdf(stylesheets=[css], font_config=font_config)
-    
-    # Return PDF response
-    response = HttpResponse(pdf, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="certificate_{policy_number}.pdf"'
-    return response
+    except Exception as e:
+        print(f"PDF generation error: {e}")
+        # Fallback: Return a simple text response
+        response = HttpResponse(content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename="certificate_{certificate.policy_number}.txt"'
+        response.write(f"Certificate {certificate.policy_number}\n")
+        response.write(f"Client: {certificate.client_name}\n")
+        response.write(f"Amount: ${certificate.insured_amount}\n")
+        response.write(f"Status: {certificate.status}\n")
+        return response
 
 @staff_member_required
 def manage_payment(request, policy_number):

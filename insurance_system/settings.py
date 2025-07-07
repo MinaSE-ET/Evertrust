@@ -138,3 +138,20 @@ LOGIN_REDIRECT_URL = '/admin/certificates/certificate/'
 LOGOUT_REDIRECT_URL = '/'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WeasyPrint Configuration
+# Disable WeasyPrint if system libraries are not available
+USE_WEASYPRINT = True
+
+try:
+    import weasyprint
+    # Test if WeasyPrint works
+    from weasyprint import HTML
+    test_html = HTML(string='<html><body>Test</body></html>')
+    test_html.write_pdf()
+except Exception as e:
+    print(f"WeasyPrint not available: {e}")
+    USE_WEASYPRINT = False
+
+# PDF Generation Settings
+PDF_BACKEND = 'reportlab' if not USE_WEASYPRINT else 'weasyprint'
