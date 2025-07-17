@@ -81,4 +81,6 @@ urlpatterns = [
     # Financial Management URLs
     path('financials/', views.financial_dashboard, name='financial_dashboard'),
     path('financials/export/', views.dashboard_financial_export, name='dashboard_financial_export'),
+    # Add QR verification by policy number in path
+    path('verify/<str:policy_number>/', views.verify_qr, name='verify_qr'),
 ] 

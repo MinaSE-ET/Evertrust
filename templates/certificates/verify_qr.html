@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Certificate Verification - {{ certificate.policy_number|default:"Not Found" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.verification-container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.verification-header {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+.verification-logo {
+    width: 80px;
+    margin-bottom: 20px;
+}
+
+.verification-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.verification-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.verification-body {
+    padding: 40px;
+}
+
+.verification-status {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.status-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.status-verified {
+    color: #27ae60;
+}
+
+.status-expired {
+    color: #e74c3c;
+}
+
+.status-not-found {
+    color: #f39c12;
+}
+
+.status-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.status-description {
+    color: #666;
+    font-size: 1rem;
+}
+
+.certificate-info {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #495057;
+}
+
+.info-value {
+    color: #212529;
+}
+
+.verification-details {
+    background: #e8f4fd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.verification-details h3 {
+    color: #0c5460;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.verification-details p {
+    margin: 5px 0;
+    color: #495057;
+}
+
+.verification-actions {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.btn-verify {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    margin: 10px;
+    transition: transform 0.2s;
+}
+
+.btn-verify:hover {
+    transform: translateY(-2px);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    margin: 10px;
+    transition: transform 0.2s;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    color: white;
+    text-decoration: none;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+    .verification-container {
+        margin: 20px;
+        border-radius: 15px;
+    }
+    
+    .verification-header {
+        padding: 30px 20px;
+    }
+    
+    .verification-body {
+        padding: 30px 20px;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verification-container">
+    <div class="verification-header">
+        <img src="{% static 'images/Evertrust-logo.png' %}" alt="EverTrust Logo" class="verification-logo" />
+        <div class="verification-title">Certificate Verification</div>
+        <div class="verification-subtitle">Enter your travel insurance certificate ID to verify its validity and view details</div>
+    </div>
+    <div class="verification-body">
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        <form method="post" id="verifyForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="policy_number" class="form-label fw-bold">
+                    <i class="fas fa-certificate me-2"></i>Policy Number
+                </label>
+                <input type="text" name="policy_number" id="policy_number" value="{{ policy_number|default:'' }}" placeholder="Enter Policy Number" required>
+                {% if form.policy_number.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.policy_number.errors.0 }}
+                    </div>
+                {% endif %}
+                {% if form.policy_number.help_text %}
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        {{ form.policy_number.help_text }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg shadow">
+                    <i class="fas fa-search me-2"></i>Verify Certificate
+                </button>
+            </div>
+        </form>
+        <hr>
+        {% if verified and certificate %}
+            <div class="verification-status">
+                <div class="status-icon status-verified">✓</div>
+                <div class="status-text">Certificate Verified</div>
+                <div class="status-description">
+                    This certificate has been successfully verified and is valid.
+                </div>
+            </div>
+            
+            <div class="certificate-info">
+                <h3>Certificate Details</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Policy Number:</span>
+                        <span class="info-value">{{ certificate.policy_number }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Client Name:</span>
+                        <span class="info-value">{{ certificate.client_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Insurance Type:</span>
+                        <span class="info-value">{{ certificate.get_certificate_type_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Coverage Level:</span>
+                        <span class="info-value">{{ certificate.get_coverage_level_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Insured Amount:</span>
+                        <span class="info-value">${{ certificate.insured_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">
+                            {% if certificate.is_active %}
+                                <span style="color: #27ae60; font-weight: bold;">Active</span>
+                            {% else %}
+                                <span style="color: #e74c3c; font-weight: bold;">Expired</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Issue Date:</span>
+                        <span class="info-value">{{ certificate.issue_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Valid Until:</span>
+                        <span class="info-value">{{ certificate.end_date|date:"F d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="verification-details">
+                <h3>Verification Details</h3>
+                <p><strong>Verification Code:</strong> {{ verification.verification_code }}</p>
+                <p><strong>Verified At:</strong> {{ verification.verified_at|date:"F d, Y at g:i A" }}</p>
+                <p><strong>Verification Method:</strong> QR Code Scan</p>
+                <p><strong>IP Address:</strong> {{ verification.ip_address }}</p>
+            </div>
+            
+            <div class="verification-actions">
+                <a href="{% url 'certificates:certificate_detail' certificate.policy_number %}" class="btn-verify">
+                    View Full Certificate
+                </a>
+                <a href="{% url 'certificates:verify' %}" class="btn-secondary">
+                    Verify Another Certificate
+                </a>
+            </div>
+            
+        {% elif certificate and not certificate.is_active %}
+            <div class="verification-status">
+                <div class="status-icon status-expired">⚠</div>
+                <div class="status-text">Certificate Expired</div>
+                <div class="status-description">
+                    This certificate has expired and is no longer valid.
+                </div>
+            </div>
+            
+            <div class="certificate-info">
+                <h3>Certificate Details</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Policy Number:</span>
+                        <span class="info-value">{{ certificate.policy_number }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Client Name:</span>
+                        <span class="info-value">{{ certificate.client_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Expired Date:</span>
+                        <span class="info-value">{{ certificate.end_date|date:"F d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="verification-actions">
+                <a href="{% url 'certificates:verify' %}" class="btn-secondary">
+                    Verify Another Certificate
+                </a>
+            </div>
+            
+        {% else %}
+            <div class="verification-status">
+                <div class="status-icon status-not-found">✗</div>
+                <div class="status-text">Certificate Not Found</div>
+                <div class="status-description">
+                    The certificate could not be found in our system.
+                </div>
+            </div>
+            
+            <div class="error-message">
+                <strong>Error:</strong> {{ error|default:"Certificate not found. Please check the policy number and try again." }}
+            </div>
+            
+            <div class="verification-actions">
+                <a href="{% url 'certificates:verify' %}" class="btn-secondary">
+                    Try Manual Verification
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

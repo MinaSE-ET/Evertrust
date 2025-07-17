@@ -68,9 +68,42 @@ def verify_certificate(request):
             except Certificate.DoesNotExist:
                 error = 'Certificate not found. Please check the policy number and try again.'
     else:
-        form = CertificateVerificationForm()
+        policy_number = request.GET.get('policy_number', '')
+        form = CertificateVerificationForm(initial={'policy_number': policy_number})
     
     return render(request, 'certificates/verify.html', {
+        'certificate': certificate,
+        'verification': verification,
+        'error': error,
+        'policy_number': policy_number,
+        'form': form
+    })
+
+def verify_qr(request, policy_number):
+    """Verification page for QR code, with policy number from path."""
+    # Reuse the logic from verify_certificate, but use the policy_number from the path
+    certificate = None
+    verification = None
+    error = None
+    if request.method == 'POST':
+        form = CertificateVerificationForm(request.POST)
+        if form.is_valid():
+            policy_number_post = form.cleaned_data['policy_number']
+            try:
+                certificate = Certificate.objects.get(policy_number=policy_number_post)
+                verification = CertificateVerification.objects.create(
+                    certificate=certificate,
+                    verification_code=str(uuid.uuid4()),
+                    status='verified' if certificate.is_active else 'expired',
+                    verified_at=timezone.now(),
+                    ip_address=request.META.get('REMOTE_ADDR', ''),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+            except Certificate.DoesNotExist:
+                error = 'Certificate not found. Please check the policy number and try again.'
+    else:
+        form = CertificateVerificationForm(initial={'policy_number': policy_number})
+    return render(request, 'certificates/verify_qr.html', {
         'certificate': certificate,
         'verification': verification,
         'error': error,
@@ -775,11 +808,10 @@ def financial_dashboard(request):
     return render(request, 'certificates/financial_dashboard.html', context)
 
 def certificate_qr(request, policy_number):
-    """Generate and serve a QR code image for the certificate verification URL."""
+    """Generate and serve a QR code image for the certificate verification URL with policy number as query param."""
     from django.urls import reverse
-    from django.conf import settings
-    # Build the absolute verification URL
-    verify_url = request.build_absolute_uri(reverse('certificates:certificate_detail', args=[policy_number]))
+    # Build the absolute verification URL with policy_number as query param
+    verify_url = request.build_absolute_uri(reverse('certificates:verify') + f'?policy_number={policy_number}')
     # Generate QR code
     qr = qrcode.QRCode(box_size=8, border=2)
     qr.add_data(verify_url)

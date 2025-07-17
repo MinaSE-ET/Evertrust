@@ -28,7 +28,7 @@
                             <label for="{{ form.policy_number.id_for_label }}" class="form-label fw-bold">
                                 <i class="fas fa-certificate me-2"></i>Policy Number
                             </label>
-                            {{ form.policy_number }}
+                            <input type="text" name="policy_number" id="policy_number" value="{{ policy_number|default:'' }}" placeholder="Enter Policy Number" required>
                             {% if form.policy_number.errors %}
                                 <div class="invalid-feedback d-block">
                                     {{ form.policy_number.errors.0 }}
